@@ -11,38 +11,34 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 
 class KtRoundEnvironment(private val roundEnvironment: RoundEnvironment) : KtEnvironment {
-    private val classElements = HashMap<String, KtClassElement>()
+    private val classElements = HashMap<String, KtClassElement<*>>()
 
-    override fun getKtClassElement(javaElement: Element): KtClassElement? {
+    override fun getKtClassElement(javaElement: Element): KtClassElement<*>? {
         val identificator = javaElement.qualifiedIdentificator
         val storedElement = classElements[identificator]
         if (storedElement != null) return storedElement
         val classHeader = javaElement.kotlinClass()
-        val classElementMetadata = classHeader?.let { KotlinClassMetadata.read(it) } ?: return null
-        val classElement = when (classElementMetadata) {
-            is KotlinClassMetadata.Class -> KtClass(this, javaElement, classElementMetadata)
-            is KotlinClassMetadata.FileFacade -> KtFileFacade(javaElement)
-            is KotlinClassMetadata.SyntheticClass -> KtSyntheticClass(javaElement)
-            is KotlinClassMetadata.MultiFileClassFacade -> KtMultiFileClassFacade(javaElement)
-            is KotlinClassMetadata.MultiFileClassPart -> KtMultiFileClassPart(javaElement)
-            is KotlinClassMetadata.Unknown -> KtUnknown(javaElement)
+        val metadata = classHeader?.let { KotlinClassMetadata.read(it) } ?: return null
+        val classElement = when (metadata) {
+            is KotlinClassMetadata.Class -> KtClass(this, javaElement, metadata)
+            is KotlinClassMetadata.FileFacade -> KtFileFacade(this, javaElement, metadata)
+            is KotlinClassMetadata.SyntheticClass -> KtSyntheticClass(this, javaElement, metadata)
+            is KotlinClassMetadata.MultiFileClassFacade -> KtMultiFileClassFacade(this, javaElement, metadata)
+            is KotlinClassMetadata.MultiFileClassPart -> KtMultiFileClassPart(this, javaElement, metadata)
+            is KotlinClassMetadata.Unknown -> KtUnknown(this, javaElement, metadata)
         }
         classElements[identificator] = classElement
         return classElement
     }
 
-    override fun getKtClass(javaElement: Element) = getKtClassElement(javaElement) as KtClass?
-
-    override fun getKtClassElement(name: ClassName): KtClassElement? {
+    override fun getKtClassElement(name: ClassName): KtClassElement<*>? {
         val identificator = name.asQualifiedIdentificator
         classElements[identificator]?.let { return it }
         return findAllElements()
-                .filter { it.qualifiedIdentificator == identificator }
-                .mapNotNull { getKtClassElement(it) }
-                .firstOrNull()
+            .filter { it.qualifiedIdentificator == identificator }
+            .mapNotNull { getKtClassElement(it) }
+            .firstOrNull()
     }
-
-    override fun getKtClass(name: ClassName) = getKtClassElement(name) as? KtClass
 
     private fun findAllElements() = Sequence {
         object : Iterator<Element> {
@@ -60,11 +56,9 @@ class KtRoundEnvironment(private val roundEnvironment: RoundEnvironment) : KtEnv
 
     override fun findAllKtClassElements() = findAllElements().mapNotNull { getKtClassElement(it) }
 
-    override fun findAllKtClasses() = findAllKtClassElements().filterIsInstance<KtClass>()
-
     override fun getRootClassElements() =
-            roundEnvironment.rootElements.mapNotNull { getKtClassElement(it) }
+        roundEnvironment.rootElements.asSequence().mapNotNull { getKtClassElement(it) }
 
     override fun <T : Annotation> getClassElementsWithAnnotation(annotationType: Class<T>) =
-            roundEnvironment.getElementsAnnotatedWith(annotationType).mapNotNull { getKtClassElement(it) }
+        roundEnvironment.getElementsAnnotatedWith(annotationType).asSequence().mapNotNull { getKtClassElement(it) }
 }

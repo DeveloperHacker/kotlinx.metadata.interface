@@ -9,8 +9,8 @@ inline fun <reified T> List<*>.allIsInstance() = filterIsInstance<T>().let {
 }
 
 fun AnnotationMirror.isKotlinMetadata() = (annotationType.asElement() as? TypeElement)
-        ?.qualifiedName
-        ?.contentEquals("kotlin.Metadata")
+    ?.qualifiedName
+    ?.contentEquals("kotlin.Metadata")
         ?: false
 
 fun AnnotationValue?.asInt() = this?.value as? Int

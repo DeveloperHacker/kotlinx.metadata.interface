@@ -6,11 +6,11 @@ import kotlinx.metadata.KmVersionRequirementVisitor
 import org.jetbrains.research.KtWrapper
 
 data class KtVersionRequirement(
-        val kind: KmVersionRequirementVersionKind,
-        val level: KmVersionRequirementLevel,
-        val errorCode: Int?,
-        val message: String?,
-        val version: KtVersion
+    val kind: KmVersionRequirementVersionKind,
+    val level: KmVersionRequirementLevel,
+    val errorCode: Int?,
+    val message: String?,
+    val version: KtVersion
 ) {
 
     data class KtVersion(val major: Int, val minor: Int, val patch: Int)

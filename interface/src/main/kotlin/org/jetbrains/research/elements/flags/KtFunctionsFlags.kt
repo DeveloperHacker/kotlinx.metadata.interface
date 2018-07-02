@@ -4,7 +4,7 @@ import kotlinx.metadata.Flags
 import org.jetbrains.kotlin.metadata.deserialization.Flags.*
 import java.util.*
 
-class KtFunctionsFlags(flags: Flags): KtCallablesFlags(flags) {
+class KtFunctionsFlags(flags: Flags) : KtCallablesFlags(flags) {
     val isOperator by lazy { IS_OPERATOR.get(flags) }
     val isInfix by lazy { IS_INFIX.get(flags) }
     val isInline by lazy { IS_INLINE.get(flags) }

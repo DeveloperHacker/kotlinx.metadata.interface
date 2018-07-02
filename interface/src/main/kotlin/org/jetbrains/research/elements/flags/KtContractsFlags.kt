@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags.IS_NEGATED
 import org.jetbrains.kotlin.metadata.deserialization.Flags.IS_NULL_CHECK_PREDICATE
 import java.util.*
 
-class KtContractsFlags(flags: Flags): KtFlags(flags) {
+class KtContractsFlags(flags: Flags) : KtFlags(flags) {
     val isNegated by lazy { IS_NEGATED.get(flags) }
     val isNullCheckPredicate by lazy { IS_NULL_CHECK_PREDICATE.get(flags) }
 

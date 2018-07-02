@@ -1,9 +1,7 @@
 package org.jetbrains.research
 
 import com.google.auto.service.AutoService
-import org.jetbrains.research.elements.KtClass
-import org.jetbrains.research.elements.KtFileFacade
-import org.jetbrains.research.environments.KtEnvironment
+import org.jetbrains.research.elements.*
 import org.jetbrains.research.environments.KtRoundEnvironment
 import java.io.File
 import javax.annotation.processing.*
@@ -24,7 +22,7 @@ class TestAnnotationProcessor : AbstractProcessor() {
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
     }
 
-    class Env(private val file: File, private val indent: Int = 1, prefix: String = "") {
+    class Env(private val file: File, private val indent: Int, prefix: String = "") {
         private var prefix: String = prefix
             get() = field.also { field = "" }
 
@@ -40,26 +38,59 @@ class TestAnnotationProcessor : AbstractProcessor() {
             return false
         }
         val file = File(kaptKotlinGeneratedDir, "structure.txt")
-                .apply { parentFile.mkdirs() }
-                .apply { createNewFile() }
+            .apply { parentFile.mkdirs() }
+            .apply { createNewFile() }
         val environment = KtRoundEnvironment(roundEnvironment)
-        val printEnvironment = Env(file)
+        val printEnvironment = Env(file, 0)
         environment.getRootClassElements().forEach {
             when (it) {
-                is KtClass -> printEnvironment.process(environment, it)
-                is KtFileFacade -> println(it)
+                is KtClass -> printEnvironment.child("class ").process(it)
+                is KtFileFacade -> printEnvironment.child().process(it)
+                is KtSyntheticClass -> printEnvironment.child().process(it)
+                is KtMultiFileClassFacade -> printEnvironment.child().printLn("multi file facade")
+                is KtMultiFileClassPart -> printEnvironment.child().process(it)
+                is KtUnknown -> printEnvironment.child().printLn("unknown")
             }
         }
         return true
     }
 
-    private fun Env.process(environment: KtEnvironment, ktClass: KtClass) {
-        printLn("class ${ktClass.name} ${ktClass.flags} {")
-        ktClass.enumEntries.let { if (it.isNotEmpty()) println("enumEntries=$it") }
-        ktClass.extensions.forEach { println(it) }
-        ktClass.constructors.forEach { println(it) }
-        ktClass.companion?.let { child("companion ").process(environment, it) }
-        ktClass.versionRequirement?.let { println("versionRequirement=$it") }
+    private fun Env.process(element: KtSyntheticClass) {
+        printLn("file facade {")
+        println(element.function)
+        printLn("}")
+    }
+
+    private fun Env.process(element: KtMultiFileClassPart) {
+        printLn("multi file part {")
+        element.nestedProperties.forEach { child("nested property ").printLn(it) }
+        element.nestedFunctions.forEach { child("nested function ").printLn(it) }
+        element.nestedTypeAliases.forEach { println(it) }
+        printLn("}")
+    }
+
+    private fun Env.process(element: KtFileFacade) {
+        printLn("file facade {")
+        element.nestedProperties.forEach { child("nested property ").printLn(it) }
+        element.nestedFunctions.forEach { child("nested function ").printLn(it) }
+        element.nestedTypeAliases.forEach { println(it) }
+        printLn("}")
+    }
+
+    private fun Env.process(element: KtClass) {
+        printLn("${element.name} ${element.flags} {")
+        element.versionRequirement?.let { println("versionRequirement=$it") }
+        println("typeParameters=${element.typeParameters}")
+        println("superTypes=${element.superTypes}")
+        element.enumEntries.let { println("enumEntries=$it") }
+        element.extensions.forEach { println(it) }
+        element.constructors.forEach { println(it) }
+        element.nestedTypeAliases.forEach { println(it) }
+        element.companion?.let { child("companion object ").process(it) }
+        element.nestedClasses.forEach { child("nested class ").process(it) }
+        element.sealedSubclasses.forEach { child("sealed subclass ").process(it) }
+        element.nestedProperties.forEach { child("nested property ").printLn(it) }
+        element.nestedFunctions.forEach { child("nested function ").printLn(it) }
         printLn("}")
     }
 }

@@ -3,17 +3,25 @@ package org.jetbrains.research.elements
 import kotlinx.metadata.*
 import kotlinx.metadata.jvm.JvmTypeParameterExtensionVisitor
 import org.jetbrains.research.elements.flags.KtDeclarationFlags
+import org.jetbrains.research.environments.KtEnvironment
 
 data class KtTypeParameter(
-        val flags: KtDeclarationFlags,
-        val name: String,
-        val id: Int,
-        val variance: KmVariance,
-        val extensions: List<KtExtension>,
-        val upperBounds: List<KtType>
+    val flags: KtDeclarationFlags,
+    val name: String,
+    val id: Int,
+    val variance: KmVariance,
+    val extensions: List<KtExtension>,
+    val upperBounds: List<KtType>
 ) {
     companion object {
-        operator fun invoke(flags: Flags, name: String, id: Int, variance: KmVariance, resultListener: (KtTypeParameter) -> Unit) = object : KmTypeParameterVisitor() {
+        operator fun invoke(
+            environment: KtEnvironment,
+            flags: Flags,
+            name: String,
+            id: Int,
+            variance: KmVariance,
+            resultListener: (KtTypeParameter) -> Unit
+        ) = object : KmTypeParameterVisitor() {
             val extensions = ArrayList<KtExtension>()
             val upperBounds = ArrayList<KtType>()
 
@@ -27,7 +35,7 @@ data class KtTypeParameter(
                 extensions.add(it)
             }
 
-            override fun visitUpperBound(flags: Flags) = KtType(flags) {
+            override fun visitUpperBound(flags: Flags) = KtType(environment, flags) {
                 upperBounds.add(it)
             }
         }

@@ -4,7 +4,7 @@ import kotlinx.metadata.Flags
 import org.jetbrains.kotlin.metadata.deserialization.Flags.*
 import java.util.*
 
-class KtPropertiesFlags(flags: Flags): KtCallablesFlags(flags) {
+class KtPropertiesFlags(flags: Flags) : KtCallablesFlags(flags) {
     val isVar by lazy { IS_VAR.get(flags) }
     val hasGetter by lazy { HAS_GETTER.get(flags) }
     val hasSetter by lazy { HAS_SETTER.get(flags) }

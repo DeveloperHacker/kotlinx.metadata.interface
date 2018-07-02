@@ -6,37 +6,39 @@ import kotlinx.metadata.KmConstructorVisitor
 import kotlinx.metadata.KmExtensionType
 import kotlinx.metadata.jvm.JvmConstructorExtensionVisitor
 import org.jetbrains.research.elements.flags.KtConstructorsFlags
+import org.jetbrains.research.environments.KtEnvironment
 
 data class KtConstructor(
-        val flags: KtConstructorsFlags,
-        val extensions: List<KtExtension>,
-        val valueParameters: List<KtValueParameter>,
-        val versionRequirement: KtVersionRequirement?
+    val flags: KtConstructorsFlags,
+    val extensions: List<KtExtension>,
+    val valueParameters: List<KtValueParameter>,
+    val versionRequirement: KtVersionRequirement?
 ) {
     companion object {
-        operator fun invoke(flags: Flags, resultListener: (KtConstructor) -> Unit) = object : KmConstructorVisitor() {
-            val extensions = ArrayList<KtExtension>()
-            val valueParameters = ArrayList<KtValueParameter>()
-            var versionRequirement: KtVersionRequirement? = null
+        operator fun invoke(environment: KtEnvironment, flags: Flags, resultListener: (KtConstructor) -> Unit) =
+            object : KmConstructorVisitor() {
+                val extensions = ArrayList<KtExtension>()
+                val valueParameters = ArrayList<KtValueParameter>()
+                var versionRequirement: KtVersionRequirement? = null
 
-            override fun visitEnd() {
-                val constructorFlags = KtConstructorsFlags(flags)
-                val constructor = KtConstructor(constructorFlags, extensions, valueParameters, versionRequirement)
-                resultListener(constructor)
-            }
+                override fun visitEnd() {
+                    val constructorFlags = KtConstructorsFlags(flags)
+                    val constructor = KtConstructor(constructorFlags, extensions, valueParameters, versionRequirement)
+                    resultListener(constructor)
+                }
 
-            override fun visitExtensions(type: KmExtensionType) = KtExtension(type) {
-                extensions.add(it)
-            }
+                override fun visitExtensions(type: KmExtensionType) = KtExtension(type) {
+                    extensions.add(it)
+                }
 
-            override fun visitValueParameter(flags: Flags, name: String) = KtValueParameter(flags, name) {
-                valueParameters.add(it)
-            }
+                override fun visitValueParameter(flags: Flags, name: String) = KtValueParameter(environment, flags, name) {
+                    valueParameters.add(it)
+                }
 
-            override fun visitVersionRequirement() = KtVersionRequirement {
-                versionRequirement = it
+                override fun visitVersionRequirement() = KtVersionRequirement {
+                    versionRequirement = it
+                }
             }
-        }
     }
 
     data class KtExtension(val descriptor: String?) {
