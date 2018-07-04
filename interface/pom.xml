@@ -12,7 +12,7 @@
     <artifactId>interface</artifactId>
 
     <properties>
-        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.version>1.2.51</kotlin.version>
     </properties>
 
     <dependencies>

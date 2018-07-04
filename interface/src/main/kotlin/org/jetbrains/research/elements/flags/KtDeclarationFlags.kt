@@ -6,7 +6,7 @@ import java.util.*
 
 
 open class KtDeclarationFlags(flags: Flags) : KtFlags(flags) {
-    val hasAnnotations by lazy { HAS_ANNOTATIONS.get(flags) }
+    val hasAnnotations: Boolean by lazy { HAS_ANNOTATIONS.get(flags) }
     val visibility by lazy { VISIBILITY.get(flags)?.let { KtVisibility(it) } }
     val modality by lazy { MODALITY.get(flags)?.let { KtModality(it) } }
 

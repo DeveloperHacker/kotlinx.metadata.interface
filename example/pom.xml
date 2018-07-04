@@ -12,7 +12,7 @@
     <artifactId>example</artifactId>
 
     <properties>
-        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.version>1.2.51</kotlin.version>
     </properties>
 
     <dependencies>
@@ -99,6 +99,7 @@
                         <configuration>
                             <sourceDirs>
                                 <sourceDir>src/main/kotlin</sourceDir>
+                                <sourceDir>target/generated-sources/kaptKotlin</sourceDir>
                             </sourceDirs>
                             <args>
                                 <arg>-Xnew-inference</arg>

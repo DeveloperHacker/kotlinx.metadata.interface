@@ -1,8 +1,6 @@
 package org.jetbrains.research.environments
 
-import kotlinx.metadata.ClassName
 import kotlinx.metadata.jvm.KotlinClassMetadata
-import org.jetbrains.research.asQualifiedIdentificator
 import org.jetbrains.research.elements.*
 import org.jetbrains.research.kotlinClass
 import org.jetbrains.research.qualifiedIdentificator
@@ -29,15 +27,6 @@ class KtRoundEnvironment(private val roundEnvironment: RoundEnvironment) : KtEnv
         }
         classElements[identificator] = classElement
         return classElement
-    }
-
-    override fun getKtClassElement(name: ClassName): KtClassElement<*>? {
-        val identificator = name.asQualifiedIdentificator
-        classElements[identificator]?.let { return it }
-        return findAllElements()
-            .filter { it.qualifiedIdentificator == identificator }
-            .mapNotNull { getKtClassElement(it) }
-            .firstOrNull()
     }
 
     private fun findAllElements() = Sequence {

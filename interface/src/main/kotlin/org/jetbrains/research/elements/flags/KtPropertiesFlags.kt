@@ -5,15 +5,15 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags.*
 import java.util.*
 
 class KtPropertiesFlags(flags: Flags) : KtCallablesFlags(flags) {
-    val isVar by lazy { IS_VAR.get(flags) }
-    val hasGetter by lazy { HAS_GETTER.get(flags) }
-    val hasSetter by lazy { HAS_SETTER.get(flags) }
-    val isConst by lazy { IS_CONST.get(flags) }
-    val isLateinit by lazy { IS_LATEINIT.get(flags) }
-    val hasConstant by lazy { HAS_CONSTANT.get(flags) }
-    val isExternalProperty by lazy { IS_EXTERNAL_PROPERTY.get(flags) }
-    val isDelegated by lazy { IS_DELEGATED.get(flags) }
-    val isExpectProperty by lazy { IS_EXPECT_PROPERTY.get(flags) }
+    val isVar: Boolean by lazy { IS_VAR.get(flags) }
+    val hasGetter: Boolean by lazy { HAS_GETTER.get(flags) }
+    val hasSetter: Boolean by lazy { HAS_SETTER.get(flags) }
+    val isConst: Boolean by lazy { IS_CONST.get(flags) }
+    val isLateinit: Boolean by lazy { IS_LATEINIT.get(flags) }
+    val hasConstant: Boolean by lazy { HAS_CONSTANT.get(flags) }
+    val isExternalProperty: Boolean by lazy { IS_EXTERNAL_PROPERTY.get(flags) }
+    val isDelegated: Boolean by lazy { IS_DELEGATED.get(flags) }
+    val isExpectProperty: Boolean by lazy { IS_EXPECT_PROPERTY.get(flags) }
 
     override val names by lazy {
         val result = ArrayList<String>()

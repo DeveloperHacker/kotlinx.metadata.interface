@@ -13,7 +13,8 @@ data class KtType(
     val outerType: KtType?,
     val typeFlexibilityId: String?,
     val flexibleUpperBound: KtType?,
-    val typeArguments: List<KtTypeArgument>
+    val typeArguments: List<KtTypeArgument>,
+    val origin: Origin
 ) {
     fun isFlexibleType() = flexibleUpperBound != null
 
@@ -43,7 +44,7 @@ data class KtType(
                 override fun visitEnd() {
                     val typeFlags = KtDeclarationFlags(flags)
                     val type =
-                        KtType(typeFlags, extensions, abbreviatedType, outerType, typeFlexibilityId, flexibleUpperBound, typeArguments)
+                        KtType(typeFlags, extensions, abbreviatedType, outerType, typeFlexibilityId, flexibleUpperBound, typeArguments, origin)
                     resultListener(type)
                 }
 
@@ -81,12 +82,16 @@ data class KtType(
             val ktClass by lazy {
                 environment.findAllKtClassElements().filterIsInstance<KtClass>().firstOrNull { it.name == name }
             }
+
+            override fun toString() = name
         }
 
         class TypeAlias(environment: KtEnvironment, val name: ClassName) : Origin() {
             val ktClass by lazy {
                 environment.findAllKtClassElements().filterIsInstance<KtClass>().firstOrNull { it.name == name }
             }
+
+            override fun toString() = name
         }
     }
 

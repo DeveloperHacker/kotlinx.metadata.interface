@@ -6,11 +6,11 @@ import java.util.*
 
 class KtClassFlags(flags: Flags) : KtDeclarationFlags(flags) {
     val classKind by lazy { CLASS_KIND.get(flags)?.let { KtClassKind(it) } }
-    val isInner by lazy { IS_INNER.get(flags) }
-    val isData by lazy { IS_DATA.get(flags) }
-    val isExternalClass by lazy { IS_EXTERNAL_CLASS.get(flags) }
-    val isExpectClass by lazy { IS_EXPECT_CLASS.get(flags) }
-    val isInlineClass by lazy { IS_INLINE_CLASS.get(flags) }
+    val isInner: Boolean by lazy { IS_INNER.get(flags) }
+    val isData: Boolean by lazy { IS_DATA.get(flags) }
+    val isExternalClass: Boolean by lazy { IS_EXTERNAL_CLASS.get(flags) }
+    val isExpectClass: Boolean by lazy { IS_EXPECT_CLASS.get(flags) }
+    val isInlineClass: Boolean by lazy { IS_INLINE_CLASS.get(flags) }
 
     override val names by lazy {
         val result = ArrayList<String>()

@@ -17,35 +17,41 @@ class KtClass(environment: KtEnvironment, javaElement: Element, metadata: Kotlin
             lateinit var flags_: KtClassFlags
             lateinit var name_: ClassName
             var companion_: KtClass? = null
+            var primaryConstructor_: KtConstructor? = null
             val constructors_ = ArrayList<KtConstructor>()
             val extensions_ = ArrayList<KtExtension>()
             val enumEntries_ = ArrayList<String>()
             val typeParameters_ = ArrayList<KtTypeParameter>()
-            val nestedClasses_ = ArrayList<KtClass>()
+            val classes_ = ArrayList<KtClass>()
             val superTypes_ = ArrayList<KtType>()
             val sealedSubclasses_ = ArrayList<KtClass>()
-            val nestedTypeAliases_ = ArrayList<KtTypeAlias>()
-            val nestedFunctions_ = ArrayList<KtFunction>()
-            val nestedProperties_ = ArrayList<KtProperty>()
+            val typeAliases_ = ArrayList<KtTypeAlias>()
+            val functions_ = ArrayList<KtFunction>()
+            val properties_ = ArrayList<KtProperty>()
             var versionRequirement_: KtVersionRequirement? = null
 
-            val enclosedClasses: List<KtClass> by lazy {
-                javaElement.enclosedElements
-                    .filter { it.kind == ElementKind.CLASS }
-                    .mapNotNull { environment.getKtClassElement(it) }
-                    .filterIsInstance<KtClass>()
-            }
+            val javaConstructors = javaElement.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }
 
             override fun visit(flags: Flags, name: ClassName) {
                 flags_ = KtClassFlags(flags)
                 name_ = name
             }
 
-            override fun visitCompanionObject(name: String) {
-                companion_ = enclosedClasses.first { it.javaElement.simpleName.toString() == name }
+            override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
+                KtTypeParameter(environment, flags, name, id, variance) {
+                    typeParameters_.add(it)
+                }
+
+            override fun visitSupertype(flags: Flags) = KtType(environment, flags) {
+                superTypes_.add(it)
+            }
+
+            override fun visitCompanionObject(name: String) = KtClass(environment, javaElement, name) {
+                companion_ = it
             }
 
             override fun visitConstructor(flags: Flags) = KtConstructor(environment, flags) {
+                if (it.flags.isPrimary) primaryConstructor_ = it
                 constructors_.add(it)
             }
 
@@ -57,57 +63,56 @@ class KtClass(environment: KtEnvironment, javaElement: Element, metadata: Kotlin
                 extensions_.add(it)
             }
 
-            override fun visitNestedClass(name: String) {
-                val nestedClass = enclosedClasses.first { it.javaElement.simpleName.toString() == name }
-                nestedClasses_.add(nestedClass)
+            override fun visitNestedClass(name: String) = KtClass(environment, javaElement, name) {
+                classes_.add(it)
             }
 
-            override fun visitSealedSubclass(name: ClassName) {
-                val sealedSubclass = enclosedClasses.first { it.javaElement.simpleName.toString() == name }
-                sealedSubclasses_.add(sealedSubclass)
+            override fun visitSealedSubclass(name: ClassName) = KtClass(environment, javaElement, name) {
+                sealedSubclasses_.add(it)
             }
-
-            override fun visitSupertype(flags: Flags) = KtType(environment, flags) {
-                superTypes_.add(it)
-            }
-
-            override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                KtTypeParameter(environment, flags, name, id, variance) {
-                    typeParameters_.add(it)
-                }
 
             override fun visitVersionRequirement() = KtVersionRequirement {
                 versionRequirement_ = it
             }
 
             override fun visitFunction(flags: Flags, name: String) = KtFunction(environment, flags, name) {
-                nestedFunctions_.add(it)
+                functions_.add(it)
             }
 
             override fun visitProperty(flags: Flags, name: String, getterFlags: Flags, setterFlags: Flags) =
                 KtProperty(environment, flags, name, getterFlags, setterFlags) {
-                    nestedProperties_.add(it)
+                    properties_.add(it)
                 }
 
             override fun visitTypeAlias(flags: Flags, name: String) = KtTypeAlias(environment, flags, name) {
-                nestedTypeAliases_.add(it)
+                typeAliases_.add(it)
             }
 
             override fun visitEnd() {
+                val (javaConstructors, kotlinConstructors) = if (primaryConstructor_ != null) {
+                    constructors_.last().javaElement = javaConstructors.first()
+                    Pair(javaConstructors.drop(1), constructors_.dropLast(1))
+                } else {
+                    Pair(javaConstructors, constructors_)
+                }
+                for ((java, kotlin) in javaConstructors.zip(kotlinConstructors)) {
+                    kotlin.javaElement = java
+                }
                 flags = flags_
                 name = name_
                 companion = companion_
+                primaryConstructor = primaryConstructor_
                 constructors = constructors_
                 extensions = extensions_
                 enumEntries = enumEntries_
                 versionRequirement = versionRequirement_
                 typeParameters = typeParameters_
-                nestedClasses = nestedClasses_
+                classes = classes_
                 superTypes = superTypes_
                 sealedSubclasses = sealedSubclasses_
-                nestedFunctions = nestedFunctions_
-                nestedProperties = nestedProperties_
-                nestedTypeAliases = nestedTypeAliases_
+                functions = functions_
+                properties = properties_
+                typeAliases = typeAliases_
             }
         })
     }
@@ -119,6 +124,9 @@ class KtClass(environment: KtEnvironment, javaElement: Element, metadata: Kotlin
         private set
 
     var companion: KtClass? by lazyInitializer.Property()
+        private set
+
+    var primaryConstructor: KtConstructor? by lazyInitializer.Property()
         private set
 
     var constructors: List<KtConstructor> by lazyInitializer.Property()
@@ -133,7 +141,7 @@ class KtClass(environment: KtEnvironment, javaElement: Element, metadata: Kotlin
     var typeParameters: List<KtTypeParameter> by lazyInitializer.Property()
         private set
 
-    var nestedClasses: List<KtClass> by lazyInitializer.Property()
+    var classes: List<KtClass> by lazyInitializer.Property()
         private set
 
     var superTypes: List<KtType> by lazyInitializer.Property()
@@ -145,14 +153,23 @@ class KtClass(environment: KtEnvironment, javaElement: Element, metadata: Kotlin
     var versionRequirement: KtVersionRequirement? by lazyInitializer.Property()
         private set
 
-    var nestedTypeAliases: List<KtTypeAlias> by lazyInitializer.Property()
+    var typeAliases: List<KtTypeAlias> by lazyInitializer.Property()
         private set
 
-    var nestedFunctions: List<KtFunction> by lazyInitializer.Property()
+    var functions: List<KtFunction> by lazyInitializer.Property()
         private set
 
-    var nestedProperties: List<KtProperty> by lazyInitializer.Property()
+    var properties: List<KtProperty> by lazyInitializer.Property()
         private set
+
+    companion object {
+        operator fun invoke(environment: KtEnvironment, javaElement: Element, name: ClassName, resultListener: (KtClass) -> Unit) =
+            resultListener(
+                javaElement.enclosedElements.asSequence()
+                    .mapNotNull { environment.getKtClassElement(it) }
+                    .filterIsInstance<KtClass>()
+                    .first { it.javaElement.simpleName.toString() == name })
+    }
 
     data class KtExtension(val anonymousObjectOriginName: String?) {
         companion object {

@@ -5,7 +5,8 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags.IS_SECONDARY
 import java.util.*
 
 class KtConstructorsFlags(flags: Flags) : KtCallablesFlags(flags) {
-    val isSecondary by lazy { IS_SECONDARY.get(flags) }
+    val isSecondary: Boolean by lazy { IS_SECONDARY.get(flags) }
+    val isPrimary: Boolean by lazy { !isSecondary }
 
     override val names by lazy {
         val result = ArrayList<String>()

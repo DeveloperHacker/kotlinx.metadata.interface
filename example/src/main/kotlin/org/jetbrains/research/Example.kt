@@ -22,40 +22,40 @@ import kotlin.reflect.jvm.reflect
 )
 annotation class OnAnyThing(val x: Int = 5)
 
-@TestAnnotation
 data class OhMy(val i: Int)
 
-@TestAnnotation
 data class ReallyThere(val i: Double?, @OnAnyThing val s: @OnAnyThing String, val k: OhMy)
 
-@TestAnnotation
 object Obj
 
-@TestAnnotation
 sealed class Expr
 
-@TestAnnotation
 data class Var(val name: String)
 
-@TestAnnotation
+@PrettyPrintable
 data class Const(val value: Int)
 
-@TestAnnotation
-class FullBlown {
-    @TestAnnotation
-    inner class Inner
-
-    @TestAnnotation
-    class NotInner
-
-    @TestAnnotation
-    companion object {
-        @TestAnnotation
-        class AlsoAClass
-    }
+class AAA(val a: Int) {
+    constructor(b: Int, c: Int, d: Int): this(b)
+    constructor(b: Int, c: Int, d: Int, e: Int): this(b)
+    constructor(b: Int, c: Int, d: String): this(b)
+    constructor(b: Int, c: Int): this(b)
+    constructor(b: Int, c: Int, d: Int, e: String): this(b)
+    constructor(b: Int, c: String): this(b)
 }
 
-@TestAnnotation
+class FullBlown {
+    inner class Inner
+
+    class NotInner
+
+    companion object {
+        class AlsoAClass
+    }
+
+    enum class A { A, B, C; }
+}
+
 enum class EnumExample { BADGER, RED, NINE, NIEN, ROOSEVELT; }
 
 val x = { x: Int -> x + 1 }

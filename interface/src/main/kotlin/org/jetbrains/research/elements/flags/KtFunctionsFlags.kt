@@ -5,13 +5,13 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags.*
 import java.util.*
 
 class KtFunctionsFlags(flags: Flags) : KtCallablesFlags(flags) {
-    val isOperator by lazy { IS_OPERATOR.get(flags) }
-    val isInfix by lazy { IS_INFIX.get(flags) }
-    val isInline by lazy { IS_INLINE.get(flags) }
-    val isTailrec by lazy { IS_TAILREC.get(flags) }
-    val isExternalFunction by lazy { IS_EXTERNAL_FUNCTION.get(flags) }
-    val isSuspend by lazy { IS_SUSPEND.get(flags) }
-    val isExpectFunction by lazy { IS_EXPECT_FUNCTION.get(flags) }
+    val isOperator: Boolean by lazy { IS_OPERATOR.get(flags) }
+    val isInfix: Boolean by lazy { IS_INFIX.get(flags) }
+    val isInline: Boolean by lazy { IS_INLINE.get(flags) }
+    val isTailrec: Boolean by lazy { IS_TAILREC.get(flags) }
+    val isExternalFunction: Boolean by lazy { IS_EXTERNAL_FUNCTION.get(flags) }
+    val isSuspend: Boolean by lazy { IS_SUSPEND.get(flags) }
+    val isExpectFunction: Boolean by lazy { IS_EXPECT_FUNCTION.get(flags) }
 
     override val names by lazy {
         val result = ArrayList<String>()

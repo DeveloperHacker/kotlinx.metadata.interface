@@ -1,6 +1,5 @@
 package org.jetbrains.research
 
-import kotlinx.metadata.ClassName
 import kotlinx.metadata.jvm.KotlinClassHeader
 import javax.lang.model.element.*
 
@@ -36,11 +35,8 @@ fun Element.kotlinClass() = annotationMirrors.firstOrNull { it.isKotlinMetadata(
 
 val Element.qualifiedIdentificator: String
     get() = when (kind) {
-        ElementKind.PACKAGE, ElementKind.CLASS -> "[$kind][$this]"
+        ElementKind.PACKAGE, ElementKind.CLASS, ElementKind.ANNOTATION_TYPE -> "[$kind][$this]"
         else -> "[$kind][${enclosingElement?.qualifiedIdentificator}][$this]"
     }
-
-val ClassName.asQualifiedIdentificator: String
-    get() = "[${ElementKind.CLASS}][$this]"
 
 data class KtWrapper<T>(val value: T)

@@ -12,7 +12,7 @@
     <artifactId>kapt-example</artifactId>
 
     <properties>
-        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.version>1.2.51</kotlin.version>
     </properties>
 
     <dependencies>
@@ -37,6 +37,13 @@
             <artifactId>interface</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yanex</groupId>
+            <artifactId>takenoko</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../takenoko/takenoko/build/libs/takenoko-0.1-SNAPSHOT.jar</systemPath>
         </dependency>
     </dependencies>
 

@@ -5,9 +5,9 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags.*
 import java.util.*
 
 class KtParametersFlags(flags: Flags) : KtDeclarationFlags(flags) {
-    val declaresDefaultValue by lazy { DECLARES_DEFAULT_VALUE.get(flags) }
-    val isCrossinline by lazy { IS_CROSSINLINE.get(flags) }
-    val isNoinline by lazy { IS_NOINLINE.get(flags) }
+    val declaresDefaultValue: Boolean by lazy { DECLARES_DEFAULT_VALUE.get(flags) }
+    val isCrossinline: Boolean by lazy { IS_CROSSINLINE.get(flags) }
+    val isNoinline: Boolean by lazy { IS_NOINLINE.get(flags) }
 
     override val names by lazy {
         val result = ArrayList<String>()

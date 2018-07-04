@@ -7,13 +7,17 @@ import kotlinx.metadata.KmExtensionType
 import kotlinx.metadata.jvm.JvmConstructorExtensionVisitor
 import org.jetbrains.research.elements.flags.KtConstructorsFlags
 import org.jetbrains.research.environments.KtEnvironment
+import javax.lang.model.element.Element
 
-data class KtConstructor(
+class KtConstructor(
     val flags: KtConstructorsFlags,
     val extensions: List<KtExtension>,
     val valueParameters: List<KtValueParameter>,
     val versionRequirement: KtVersionRequirement?
 ) {
+    var javaElement: Element? = null
+        internal set
+
     companion object {
         operator fun invoke(environment: KtEnvironment, flags: Flags, resultListener: (KtConstructor) -> Unit) =
             object : KmConstructorVisitor() {
