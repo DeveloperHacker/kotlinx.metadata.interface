@@ -1,57 +1,39 @@
 package org.jetbrains.research.elements
 
-import kotlinx.metadata.Flags
-import kotlinx.metadata.KmEffectExpressionVisitor
-import org.jetbrains.research.KtWrapper
-import org.jetbrains.research.elements.flags.KtCallablesFlags
-import org.jetbrains.research.environments.KtEnvironment
+import org.jetbrains.research.flags.KtCallablesFlags
 
-data class KtEffectExpression(
-    val flags: KtCallablesFlags,
-    val parameterIndex: Int?,
-    val andArguments: List<KtEffectExpression>,
-    val orArguments: List<KtEffectExpression>,
-    val isInstanceType: KtType?,
+interface KtEffectExpression : KtElement, KtWithFlags<KtCallablesFlags> {
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val parameterIndex: Int?
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val andArguments: List<KtEffectExpression>
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val orArguments: List<KtEffectExpression>
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val isInstanceType: KtType?
+
+    /**
+     * ToDo kotlin comment
+     **/
     val constantValue: KtConstantValue<Any?>?
-) {
-    companion object {
-        operator fun invoke(environment: KtEnvironment, resultListener: (KtEffectExpression) -> Unit): KmEffectExpressionVisitor =
-            object : KmEffectExpressionVisitor() {
-                lateinit var flags: KtCallablesFlags
-                lateinit var parameterIndex: KtWrapper<Int?>
-                val andArguments = ArrayList<KtEffectExpression>()
-                val orArguments = ArrayList<KtEffectExpression>()
-                var isInstanceType: KtType? = null
-                var constantValue: KtConstantValue<Any?>? = null
 
-                override fun visit(flags: Flags, parameterIndex: Int?) {
-                    this.flags = KtCallablesFlags(flags)
-                    this.parameterIndex = KtWrapper(parameterIndex)
-                }
+    interface KtConstantValue<T> {
 
-                override fun visitAndArgument() = KtEffectExpression(environment) {
-                    andArguments.add(it)
-                }
-
-                override fun visitConstantValue(value: Any?) {
-                    constantValue = KtConstantValue(value)
-                }
-
-                override fun visitEnd() {
-                    val effectExpression =
-                        KtEffectExpression(flags, parameterIndex.value, andArguments, orArguments, isInstanceType, constantValue)
-                    resultListener(effectExpression)
-                }
-
-                override fun visitIsInstanceType(flags: Flags) = KtType(environment, flags) {
-                    isInstanceType = it
-                }
-
-                override fun visitOrArgument() = KtEffectExpression(environment) {
-                    orArguments.add(it)
-                }
-            }
+        /**
+         * ToDo kotlin comment
+         **/
+        val value: T
     }
-
-    data class KtConstantValue<T>(val value: T)
 }

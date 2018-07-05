@@ -1,9 +1,10 @@
 package org.jetbrains.research.elements
 
-interface KtContract : KtElement {
+interface KtElement {
 
     /**
      * ToDo kotlin comment
      **/
-    val effects: List<KtEffect>
+    // Todo element
+    // val javaElement: Element
 }

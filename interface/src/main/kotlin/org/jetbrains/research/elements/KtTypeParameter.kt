@@ -1,67 +1,41 @@
 package org.jetbrains.research.elements
 
-import kotlinx.metadata.*
-import kotlinx.metadata.jvm.JvmTypeParameterExtensionVisitor
-import org.jetbrains.research.elements.flags.KtDeclarationFlags
-import org.jetbrains.research.environments.KtEnvironment
+import kotlinx.metadata.KmAnnotation
+import kotlinx.metadata.KmVariance
+import org.jetbrains.research.flags.KtDeclarationFlags
 
-data class KtTypeParameter(
-    val flags: KtDeclarationFlags,
-    val name: String,
-    val id: Int,
-    val variance: KmVariance,
-    val extensions: List<KtExtension>,
+interface KtTypeParameter : KtElement, KtWithFlags<KtDeclarationFlags> {
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val name: String
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val id: Int
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val variance: KmVariance
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val extensions: List<KtExtension>
+
+    /**
+     * ToDo kotlin comment
+     **/
     val upperBounds: List<KtType>
-) {
-    companion object {
-        operator fun invoke(
-            environment: KtEnvironment,
-            flags: Flags,
-            name: String,
-            id: Int,
-            variance: KmVariance,
-            resultListener: (KtTypeParameter) -> Unit
-        ) = object : KmTypeParameterVisitor() {
-            val extensions = ArrayList<KtExtension>()
-            val upperBounds = ArrayList<KtType>()
 
-            override fun visitEnd() {
-                val typeFlags = KtDeclarationFlags(flags)
-                val typeParameter = KtTypeParameter(typeFlags, name, id, variance, extensions, upperBounds)
-                resultListener(typeParameter)
-            }
+    interface KtExtension {
 
-            override fun visitExtensions(type: KmExtensionType) = KtExtension(type) {
-                extensions.add(it)
-            }
-
-            override fun visitUpperBound(flags: Flags) = KtType(environment, flags) {
-                upperBounds.add(it)
-            }
-        }
-    }
-
-    data class KtExtension(val annotations: List<KmAnnotation>) {
-        companion object {
-            operator fun invoke(type: KmExtensionType, resultListener: (KtExtension) -> Unit): KmTypeParameterExtensionVisitor? {
-                if (type != JvmTypeParameterExtensionVisitor.TYPE) {
-                    val extension = KtExtension(emptyList())
-                    resultListener(extension)
-                    return null
-                }
-                return object : JvmTypeParameterExtensionVisitor() {
-                    val annotations = ArrayList<KmAnnotation>()
-
-                    override fun visitAnnotation(annotation: KmAnnotation) {
-                        annotations.add(annotation)
-                    }
-
-                    override fun visitEnd() {
-                        val extension = KtExtension(annotations)
-                        resultListener(extension)
-                    }
-                }
-            }
-        }
+        /**
+         * ToDo kotlin comment
+         **/
+        val annotations: List<KmAnnotation>
     }
 }

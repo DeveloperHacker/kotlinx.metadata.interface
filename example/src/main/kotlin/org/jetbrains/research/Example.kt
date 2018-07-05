@@ -1,5 +1,8 @@
 package org.jetbrains.research
 
+import compile.generatedEquals
+import compile.generatedHashCode
+import compile.generatedToString
 import kotlin.reflect.jvm.reflect
 
 @Retention(AnnotationRetention.SOURCE)
@@ -28,22 +31,75 @@ data class ReallyThere(val i: Double?, @OnAnyThing val s: @OnAnyThing String, va
 
 object Obj
 
-sealed class Expr
+@DataClass
+sealed class Expr(val value: Int) {
+    override fun equals(other: Any?) = generatedEquals(other)
+
+    override fun hashCode() = generatedHashCode()
+
+    override fun toString() = generatedToString()
+}
 
 data class Var(val name: String)
 
 @PrettyPrintable
 data class Const(val value: Int)
 
+@Suppress("ProtectedInFinal", "unused", "UNUSED_PARAMETER")
+@DataClass
 class AAA(val a: Int) {
-    constructor(b: Int, c: Int, d: Int): this(b)
-    constructor(b: Int, c: Int, d: Int, e: Int): this(b)
-    constructor(b: Int, c: Int, d: String): this(b)
-    constructor(b: Int, c: Int): this(b)
-    constructor(b: Int, c: Int, d: Int, e: String): this(b)
-    constructor(b: Int, c: String): this(b)
+
+    val b = 10
+    private val c = 10
+    protected val d = 10
+    val e = 10
+
+    constructor(b: Int, c: Int, d: Int) : this(b)
+    constructor(b: Int, c: Int, d: Int, e: Int) : this(b)
+    constructor(b: Int, c: Int, d: String) : this(b)
+    constructor(b: Int, c: Int) : this(b)
+    constructor(b: Int, c: Int, d: Int, e: String) : this(b)
+    constructor(b: Int, c: String) : this(b)
+
+    fun foo(b: Int, c: Int, d: Int) = 1
+    fun foo(b: Int, c: Int, d: Int, e: Int) = 1
+    fun foo(b: Int, c: Int, d: String) = 1
+    fun foo(b: Int, c: Int) = 1
+    fun foo(b: Int, c: Int, d: Int, e: String) = 1
+    fun foo(b: Int, c: String) = 1
+
+    fun FullBlown.foo(b: Int, c: Int, d: Int) = 1
+    fun FullBlown.foo(b: Int, c: Int, d: Int, e: Int) = 1
+    fun Const.foo(b: Int, c: Int) = 1
+    fun FullBlown.foo(b: Int, c: Int, d: String) = 1
+    fun Const.foo(b: Int, c: Int, d: Int, e: String) = 1
+    fun Const.foo(b: Int, c: String) = 1
+
+    override fun equals(other: Any?) = generatedEquals(other)
+
+    override fun hashCode() = generatedHashCode()
+
+    override fun toString() = generatedToString()
+
 }
 
+@Suppress("ProtectedInFinal", "unused", "UNUSED_PARAMETER")
+@DataClass
+class BBB(val a: Int) {
+
+    val b = 10
+    private val c = 10
+    protected val d = 10
+    val e = 10
+
+    override fun equals(other: Any?) = generatedEquals(other)
+
+    override fun hashCode() = generatedHashCode()
+
+    override fun toString() = generatedToString()
+}
+
+@DataClass
 class FullBlown {
     inner class Inner
 
@@ -54,6 +110,12 @@ class FullBlown {
     }
 
     enum class A { A, B, C; }
+
+    override fun equals(other: Any?) = generatedEquals(other)
+
+    override fun hashCode() = generatedHashCode()
+
+    override fun toString() = generatedToString()
 }
 
 enum class EnumExample { BADGER, RED, NINE, NIEN, ROOSEVELT; }

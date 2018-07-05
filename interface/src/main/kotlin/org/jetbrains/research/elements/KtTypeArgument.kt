@@ -1,20 +1,27 @@
 package org.jetbrains.research.elements
 
-import kotlinx.metadata.Flags
 import kotlinx.metadata.KmVariance
-import org.jetbrains.research.environments.KtEnvironment
 
-sealed class KtTypeArgument {
+interface KtTypeArgument : KtElement {
 
-    class StarProjection : KtTypeArgument()
+    /**
+     * ToDo kotlin comment
+     **/
+    interface StarProjection : KtTypeArgument
 
-    data class Simple(val variance: KmVariance, val type: KtType) : KtTypeArgument() {
-        companion object {
-            operator fun invoke(environment: KtEnvironment, flags: Flags, variance: KmVariance, resultListener: (Simple) -> Unit) =
-                KtType(environment, flags) {
-                    val typeArgument = Simple(variance, it)
-                    resultListener(typeArgument)
-                }
-        }
+    /**
+     * ToDo kotlin comment
+     **/
+    interface Simple : KtTypeArgument {
+
+        /**
+         * ToDo kotlin comment
+         **/
+        val variance: KmVariance
+
+        /**
+         * ToDo kotlin comment
+         **/
+        val type: KtType
     }
 }

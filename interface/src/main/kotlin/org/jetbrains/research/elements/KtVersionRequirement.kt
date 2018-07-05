@@ -2,42 +2,49 @@ package org.jetbrains.research.elements
 
 import kotlinx.metadata.KmVersionRequirementLevel
 import kotlinx.metadata.KmVersionRequirementVersionKind
-import kotlinx.metadata.KmVersionRequirementVisitor
-import org.jetbrains.research.KtWrapper
 
-data class KtVersionRequirement(
-    val kind: KmVersionRequirementVersionKind,
-    val level: KmVersionRequirementLevel,
-    val errorCode: Int?,
-    val message: String?,
+interface KtVersionRequirement {
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val kind: KmVersionRequirementVersionKind
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val level: KmVersionRequirementLevel
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val errorCode: Int?
+
+    /**
+     * ToDo kotlin comment
+     **/
+    val message: String?
+
+    /**
+     * ToDo kotlin comment
+     **/
     val version: KtVersion
-) {
 
-    data class KtVersion(val major: Int, val minor: Int, val patch: Int)
+    interface KtVersion {
 
-    companion object {
-        operator fun invoke(resultListener: (KtVersionRequirement) -> Unit) = object : KmVersionRequirementVisitor() {
-            lateinit var kind: KmVersionRequirementVersionKind
-            lateinit var level: KmVersionRequirementLevel
-            lateinit var errorCode: KtWrapper<Int?>
-            lateinit var message: KtWrapper<String?>
-            lateinit var version: KtVersion
+        /**
+         * ToDo kotlin comment
+         **/
+        val major: Int
 
-            override fun visit(kind: KmVersionRequirementVersionKind, level: KmVersionRequirementLevel, errorCode: Int?, message: String?) {
-                this.kind = kind
-                this.level = level
-                this.errorCode = KtWrapper(errorCode)
-                this.message = KtWrapper(message)
-            }
+        /**
+         * ToDo kotlin comment
+         **/
+        val minor: Int
 
-            override fun visitEnd() {
-                val versionRequirement = KtVersionRequirement(kind, level, errorCode.value, message.value, version)
-                resultListener(versionRequirement)
-            }
-
-            override fun visitVersion(major: Int, minor: Int, patch: Int) {
-                version = KtVersion(major, minor, patch)
-            }
-        }
+        /**
+         * ToDo kotlin comment
+         **/
+        val patch: Int
     }
 }
