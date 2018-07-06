@@ -12,16 +12,18 @@ data class KtPropertyImpl(
     override val name: String,
     override val getterFlags: KtFunctionsFlags,
     override val setterFlags: KtFunctionsFlags,
-    override val extensions: List<KtProperty.KtExtensions>,
+    override val extensions: List<KtProperty.KtExtension>,
     override val receiverParameterType: KtType?,
     override val returnType: KtType,
     override val setterValueParameter: KtValueParameter?,
     override val typeParameters: List<KtTypeParameter>,
-    override val versionRequirement: KtVersionRequirement?
+    override val versionRequirement: KtVersionRequirement?,
+    override val getParent: () -> KtElement
 ) : KtProperty {
     companion object {
         operator fun invoke(
             environment: KtEnvironment,
+            parent: () -> KtElement,
             flags: Flags,
             name: String,
             getterFlags: Flags,
@@ -29,18 +31,20 @@ data class KtPropertyImpl(
             resultListener: (KtProperty) -> Unit
         ) =
             object : KmPropertyVisitor() {
-                val extensions = ArrayList<KtProperty.KtExtensions>()
+                val extensions = ArrayList<KtProperty.KtExtension>()
                 var receiverParameterType: KtType? = null
                 lateinit var returnType: KtType
                 var setterValueParameter: KtValueParameter? = null
                 val typeParameters = ArrayList<KtTypeParameter>()
                 var versionRequirement: KtVersionRequirement? = null
+                lateinit var self: KtProperty
+                val lazySelf = { self }
 
                 override fun visitEnd() {
                     val propertyFlags = KtPropertiesFlags(flags)
                     val setterFunctionFlags = KtFunctionsFlags(setterFlags)
                     val getterFunctionFlags = KtFunctionsFlags(getterFlags)
-                    val property = KtPropertyImpl(
+                    self = KtPropertyImpl(
                         propertyFlags,
                         name,
                         setterFunctionFlags,
@@ -50,29 +54,30 @@ data class KtPropertyImpl(
                         returnType,
                         setterValueParameter,
                         typeParameters,
-                        versionRequirement
+                        versionRequirement,
+                        parent
                     )
-                    resultListener(property)
+                    resultListener(self)
                 }
 
-                override fun visitExtensions(type: KmExtensionType) = KtExtensionsImpl(type) {
+                override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
                     extensions.add(it)
                 }
 
-                override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                     receiverParameterType = it
                 }
 
-                override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                     returnType = it
                 }
 
-                override fun visitSetterParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, flags, name) {
+                override fun visitSetterParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, lazySelf, flags, name) {
                     setterValueParameter = it
                 }
 
                 override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                    KtTypeParameterImpl(environment, flags, name, id, variance) {
+                    KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
                         typeParameters
                     }
 
@@ -82,17 +87,17 @@ data class KtPropertyImpl(
             }
     }
 
-    data class KtExtensionsImpl(
+    data class KtExtensionImpl(
         override val fieldName: String?,
         override val fieldTypeDesc: String?,
         override val getterDesc: String?,
         override val setterDesc: String?,
         override val syntheticMethodForAnnotations: String?
-    ) : KtProperty.KtExtensions {
+    ) : KtProperty.KtExtension {
         companion object {
-            operator fun invoke(type: KmExtensionType, resultListener: (KtProperty.KtExtensions) -> Unit): KmPropertyExtensionVisitor? {
+            operator fun invoke(type: KmExtensionType, resultListener: (KtProperty.KtExtension) -> Unit): KmPropertyExtensionVisitor? {
                 if (type != JvmPropertyExtensionVisitor.TYPE) {
-                    val extension = KtExtensionsImpl(null, null, null, null, null)
+                    val extension = KtExtensionImpl(null, null, null, null, null)
                     resultListener(extension)
                     return null
                 }
@@ -111,7 +116,7 @@ data class KtPropertyImpl(
                     }
 
                     override fun visitEnd() {
-                        val extension = KtExtensionsImpl(
+                        val extension = KtExtensionImpl(
                             fieldName.value,
                             fieldTypeDesc.value,
                             getterDesc.value,

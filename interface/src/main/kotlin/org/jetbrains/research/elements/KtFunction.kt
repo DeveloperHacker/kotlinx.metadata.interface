@@ -1,8 +1,19 @@
 package org.jetbrains.research.elements
 
 import org.jetbrains.research.flags.KtFunctionsFlags
+import javax.lang.model.element.Element
 
 interface KtFunction : KtElement, KtWithFlags<KtFunctionsFlags> {
+
+    /**
+     * ToDo kotlin comment
+     **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
+    override val javaElement: Element?
 
     /**
      * ToDo kotlin comment

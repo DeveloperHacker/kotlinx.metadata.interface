@@ -7,20 +7,25 @@ interface KtEnvironment {
     /**
      * ToDo kotlin comment
      **/
-    fun getKtClassElement(javaElement: Element): KtClassElement<*>?
+    fun getRootKtElements(): Sequence<KtElement>
 
     /**
      * ToDo kotlin comment
      **/
-    fun findAllKtClassElements(): Sequence<KtClassElement<*>>
+    fun getKtElement(javaElement: Element): KtElement?
 
     /**
      * ToDo kotlin comment
      **/
-    fun getRootClassElements(): Sequence<KtClassElement<*>>
+    fun <T : Annotation> getKtElements(annotationType: Class<T>): Sequence<KtElement>
 
     /**
      * ToDo kotlin comment
      **/
-    fun <T : Annotation> getClassElementsWithAnnotation(annotationType: Class<T>): Sequence<KtClassElement<*>>
+    fun getAllKtElements(): Sequence<KtElement>
+
+    /**
+     * ToDo kotlin comment
+     **/
+    fun cache(ktElement: KtElement): Boolean
 }

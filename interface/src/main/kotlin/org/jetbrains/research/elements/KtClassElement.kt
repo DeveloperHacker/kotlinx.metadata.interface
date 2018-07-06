@@ -5,11 +5,10 @@ import javax.lang.model.element.Element
 
 interface KtClassElement<T : KotlinClassMetadata> : KtElement {
 
-    // ToDo transfer to KtElement
     /**
      * ToDo kotlin comment
      **/
-    val javaElement: Element
+    override val javaElement: Element
 
     /**
      * ToDo kotlin comment

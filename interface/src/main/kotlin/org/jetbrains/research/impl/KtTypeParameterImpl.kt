@@ -2,6 +2,7 @@ package org.jetbrains.research.impl
 
 import kotlinx.metadata.*
 import kotlinx.metadata.jvm.JvmTypeParameterExtensionVisitor
+import org.jetbrains.research.elements.KtElement
 import org.jetbrains.research.elements.KtEnvironment
 import org.jetbrains.research.elements.KtType
 import org.jetbrains.research.elements.KtTypeParameter
@@ -13,11 +14,13 @@ data class KtTypeParameterImpl(
     override val id: Int,
     override val variance: KmVariance,
     override val extensions: List<KtTypeParameter.KtExtension>,
-    override val upperBounds: List<KtType>
+    override val upperBounds: List<KtType>,
+    override val getParent: () -> KtElement
 ) : KtTypeParameter {
     companion object {
         operator fun invoke(
             environment: KtEnvironment,
+            parent: () -> KtElement,
             flags: Flags,
             name: String,
             id: Int,
@@ -26,18 +29,20 @@ data class KtTypeParameterImpl(
         ) = object : KmTypeParameterVisitor() {
             val extensions = ArrayList<KtTypeParameter.KtExtension>()
             val upperBounds = ArrayList<KtType>()
+            lateinit var self: KtTypeParameter
+            val lazySelf = { self }
 
             override fun visitEnd() {
                 val typeFlags = KtDeclarationFlags(flags)
-                val typeParameter = KtTypeParameterImpl(typeFlags, name, id, variance, extensions, upperBounds)
-                resultListener(typeParameter)
+                self = KtTypeParameterImpl(typeFlags, name, id, variance, extensions, upperBounds, parent)
+                resultListener(self)
             }
 
             override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
                 extensions.add(it)
             }
 
-            override fun visitUpperBound(flags: Flags) = KtTypeImpl(environment, flags) {
+            override fun visitUpperBound(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                 upperBounds.add(it)
             }
         }

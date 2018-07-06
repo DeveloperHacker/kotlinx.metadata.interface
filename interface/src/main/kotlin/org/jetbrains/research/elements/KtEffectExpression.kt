@@ -7,6 +7,11 @@ interface KtEffectExpression : KtElement, KtWithFlags<KtCallablesFlags> {
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
     val parameterIndex: Int?
 
     /**

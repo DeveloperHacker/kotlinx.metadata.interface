@@ -14,16 +14,25 @@ data class KtTypeAliasImpl(
     override val expandedType: KtType,
     override val underlyingType: KtType,
     override val typeParameters: List<KtTypeParameter>,
-    override val versionRequirement: KtVersionRequirement?
+    override val versionRequirement: KtVersionRequirement?,
+    override val getParent: () -> KtElement
 ) : KtTypeAlias {
     companion object {
-        operator fun invoke(environment: KtEnvironment, flags: Flags, name: String, resultListener: (KtTypeAlias) -> Unit) =
+        operator fun invoke(
+            environment: KtEnvironment,
+            parent: () -> KtElement,
+            flags: Flags,
+            name: String,
+            resultListener: (KtTypeAlias) -> Unit
+        ) =
             object : KmTypeAliasVisitor() {
                 val annotations = ArrayList<KmAnnotation>()
                 lateinit var expandedType: KtType
                 lateinit var underlyingType: KtType
                 val typeParameters = ArrayList<KtTypeParameter>()
                 var versionRequirement: KtVersionRequirement? = null
+                lateinit var self: KtTypeAlias
+                val lazySelf = { self }
 
                 override fun visitAnnotation(annotation: KmAnnotation) {
                     annotations.add(annotation)
@@ -31,21 +40,29 @@ data class KtTypeAliasImpl(
 
                 override fun visitEnd() {
                     val typeAliasFlags = KtDeclarationFlags(flags)
-                    val typeAlias =
-                        KtTypeAliasImpl(typeAliasFlags, name, annotations, expandedType, underlyingType, typeParameters, versionRequirement)
-                    resultListener(typeAlias)
+                    self = KtTypeAliasImpl(
+                        typeAliasFlags,
+                        name,
+                        annotations,
+                        expandedType,
+                        underlyingType,
+                        typeParameters,
+                        versionRequirement,
+                        parent
+                    )
+                    resultListener(self)
                 }
 
-                override fun visitExpandedType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitExpandedType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                     expandedType = it
                 }
 
                 override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                    KtTypeParameterImpl(environment, flags, name, id, variance) {
+                    KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
                         typeParameters.add(it)
                     }
 
-                override fun visitUnderlyingType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitUnderlyingType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                     underlyingType = it
                 }
 

@@ -2,26 +2,31 @@ package org.jetbrains.research.elements
 
 import kotlinx.metadata.KmVariance
 
-interface KtTypeArgument : KtElement {
+sealed class KtTypeArgument : KtElement {
 
     /**
      * ToDo kotlin comment
      **/
-    interface StarProjection : KtTypeArgument
+    abstract override val getParent: () -> KtType
 
     /**
      * ToDo kotlin comment
      **/
-    interface Simple : KtTypeArgument {
+    abstract class StarProjection : KtTypeArgument()
+
+    /**
+     * ToDo kotlin comment
+     **/
+    abstract class Simple : KtTypeArgument() {
 
         /**
          * ToDo kotlin comment
          **/
-        val variance: KmVariance
+        abstract val variance: KmVariance
 
         /**
          * ToDo kotlin comment
          **/
-        val type: KtType
+        abstract val type: KtType
     }
 }

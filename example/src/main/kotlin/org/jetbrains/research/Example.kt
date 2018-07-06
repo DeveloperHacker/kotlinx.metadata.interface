@@ -45,9 +45,10 @@ data class Var(val name: String)
 @PrettyPrintable
 data class Const(val value: Int)
 
-@Suppress("ProtectedInFinal", "unused", "UNUSED_PARAMETER")
+@Suppress("ProtectedInFinal", "unused", "UNUSED_PARAMETER", "NOTHING_TO_INLINE")
 @DataClass
-class AAA(val a: Int) {
+@Debug
+class AAA<C>(val a: Int) {
 
     val b = 10
     private val c = 10
@@ -61,12 +62,30 @@ class AAA(val a: Int) {
     constructor(b: Int, c: Int, d: Int, e: String) : this(b)
     constructor(b: Int, c: String) : this(b)
 
+    @JvmName("moo")
     fun foo(b: Int, c: Int, d: Int) = 1
-    fun foo(b: Int, c: Int, d: Int, e: Int) = 1
+
+    inline fun foo(b: Int, c: Int, d: Int, e: Int) = 1
     fun foo(b: Int, c: Int, d: String) = 1
     fun foo(b: Int, c: Int) = 1
     fun foo(b: Int, c: Int, d: Int, e: String) = 1
     fun foo(b: Int, c: String) = 1
+    fun <T> foo(b: T, c: C) = 1
+
+    @JvmName("moo")
+    fun <T, C> foo(b: T, c: C) = 1
+
+    fun <T> foo(b: List<T>, c: C) = 1
+
+    @JvmName("moo")
+    fun <T> foo(b: List<List<T>>, c: C) = 1
+
+    fun foo1(vararg b: Int, c: C) = 1
+    fun foo2(vararg b: Int) = 1
+    fun bar(a: Int, vararg b: Array<Int>) = 1
+    fun bar(a: Int, vararg b: IntArray) = 1
+    fun foo3(b: Array<Int>) = 1
+    fun foo4(c: C, b: IntArray) = 1
 
     fun FullBlown.foo(b: Int, c: Int, d: Int) = 1
     fun FullBlown.foo(b: Int, c: Int, d: Int, e: Int) = 1
@@ -74,6 +93,8 @@ class AAA(val a: Int) {
     fun FullBlown.foo(b: Int, c: Int, d: String) = 1
     fun Const.foo(b: Int, c: Int, d: Int, e: String) = 1
     fun Const.foo(b: Int, c: String) = 1
+
+    fun FullBlown.NotInner.foo(b: Int, c: String) = 1
 
     override fun equals(other: Any?) = generatedEquals(other)
 

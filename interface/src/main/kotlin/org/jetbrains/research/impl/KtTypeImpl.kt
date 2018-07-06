@@ -2,6 +2,7 @@ package org.jetbrains.research.impl
 
 import kotlinx.metadata.*
 import kotlinx.metadata.jvm.JvmTypeExtensionVisitor
+import org.jetbrains.research.elements.KtElement
 import org.jetbrains.research.elements.KtEnvironment
 import org.jetbrains.research.elements.KtType
 import org.jetbrains.research.elements.KtTypeArgument
@@ -16,10 +17,16 @@ data class KtTypeImpl(
     override val typeFlexibilityId: String?,
     override val flexibleUpperBound: KtType?,
     override val typeArguments: List<KtTypeArgument>,
-    override val origin: KtType.Origin
+    override val origin: KtType.Origin,
+    override val getParent: () -> KtElement
 ) : KtType {
     companion object {
-        operator fun invoke(environment: KtEnvironment, flags: Flags, resultListener: (KtType) -> Unit): KmTypeVisitor =
+        operator fun invoke(
+            environment: KtEnvironment,
+            parent: () -> KtElement,
+            flags: Flags,
+            resultListener: (KtType) -> Unit
+        ): KmTypeVisitor =
             object : KmTypeVisitor() {
                 val extensions = ArrayList<KtType.KtExtension>()
                 var abbreviatedType: KtType? = null
@@ -28,45 +35,48 @@ data class KtTypeImpl(
                 var flexibleUpperBound: KtType? = null
                 val typeArguments = ArrayList<KtTypeArgument>()
                 lateinit var origin: KtType.Origin
+                lateinit var self: KtType
+                val lazySelf = { self }
 
-                override fun visitAbbreviatedType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitAbbreviatedType(flags: Flags) = KtTypeImpl(environment, parent, flags) {
                     abbreviatedType = it
                 }
 
-                override fun visitArgument(flags: Flags, variance: KmVariance) = KtSimpleImpl(environment, flags, variance) {
+                override fun visitArgument(flags: Flags, variance: KmVariance) = KtSimpleImpl(environment, lazySelf, flags, variance) {
                     typeArguments.add(it)
                 }
 
                 override fun visitStarProjection() {
-                    typeArguments.add(KtStarProjectionImpl())
+                    typeArguments.add(KtStarProjectionImpl(lazySelf))
                 }
 
                 override fun visitEnd() {
                     val typeFlags = KtDeclarationFlags(flags)
-                    val type =
-                        KtTypeImpl(
-                            typeFlags,
-                            extensions,
-                            abbreviatedType,
-                            outerType,
-                            typeFlexibilityId,
-                            flexibleUpperBound,
-                            typeArguments,
-                            origin
-                        )
-                    resultListener(type)
+                    self = KtTypeImpl(
+                        typeFlags,
+                        extensions,
+                        abbreviatedType,
+                        outerType,
+                        typeFlexibilityId,
+                        flexibleUpperBound,
+                        typeArguments,
+                        origin,
+                        parent
+                    )
+                    resultListener(self)
                 }
 
                 override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
                     extensions.add(it)
                 }
 
-                override fun visitFlexibleTypeUpperBound(flags: Flags, typeFlexibilityId: String?) = KtTypeImpl(environment, flags) {
-                    flexibleUpperBound = it
-                    this.typeFlexibilityId = typeFlexibilityId
-                }
+                override fun visitFlexibleTypeUpperBound(flags: Flags, typeFlexibilityId: String?) =
+                    KtTypeImpl(environment, lazySelf, flags) {
+                        flexibleUpperBound = it
+                        this.typeFlexibilityId = typeFlexibilityId
+                    }
 
-                override fun visitOuterType(flags: Flags) = KtTypeImpl(environment, flags) {
+                override fun visitOuterType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                     outerType = it
                 }
 

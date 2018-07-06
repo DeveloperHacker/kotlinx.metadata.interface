@@ -7,6 +7,11 @@ interface KtValueParameter : KtElement, KtWithFlags<KtParametersFlags> {
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
     val name: String
 
     /**

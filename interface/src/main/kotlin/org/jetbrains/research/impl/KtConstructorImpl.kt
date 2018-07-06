@@ -5,37 +5,41 @@ import kotlinx.metadata.KmConstructorExtensionVisitor
 import kotlinx.metadata.KmConstructorVisitor
 import kotlinx.metadata.KmExtensionType
 import kotlinx.metadata.jvm.JvmConstructorExtensionVisitor
-import org.jetbrains.research.elements.KtConstructor
-import org.jetbrains.research.elements.KtEnvironment
-import org.jetbrains.research.elements.KtValueParameter
-import org.jetbrains.research.elements.KtVersionRequirement
+import org.jetbrains.research.elements.*
 import org.jetbrains.research.flags.KtConstructorsFlags
+import javax.lang.model.element.Element
 
 data class KtConstructorImpl(
     override val flags: KtConstructorsFlags,
     override val extensions: List<KtConstructor.KtExtension>,
     override val valueParameters: List<KtValueParameter>,
-    override val versionRequirement: KtVersionRequirement?
+    override val versionRequirement: KtVersionRequirement?,
+    override val getParent: () -> KtClass
 ) : KtConstructor {
 
+    override var javaElement: Element? = null
+        internal set
+
     companion object {
-        operator fun invoke(environment: KtEnvironment, flags: Flags, resultListener: (KtConstructor) -> Unit) =
+        operator fun invoke(environment: KtEnvironment, parent: () -> KtClass, flags: Flags, resultListener: (KtConstructorImpl) -> Unit) =
             object : KmConstructorVisitor() {
                 val extensions = ArrayList<KtConstructor.KtExtension>()
                 val valueParameters = ArrayList<KtValueParameter>()
                 var versionRequirement: KtVersionRequirement? = null
+                lateinit var self: KtConstructorImpl
+                val lazySelf = { self }
 
                 override fun visitEnd() {
                     val constructorFlags = KtConstructorsFlags(flags)
-                    val constructor = KtConstructorImpl(constructorFlags, extensions, valueParameters, versionRequirement)
-                    resultListener(constructor)
+                    self = KtConstructorImpl(constructorFlags, extensions, valueParameters, versionRequirement, parent)
+                    resultListener(self)
                 }
 
                 override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
                     extensions.add(it)
                 }
 
-                override fun visitValueParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, flags, name) {
+                override fun visitValueParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, lazySelf, flags, name) {
                     valueParameters.add(it)
                 }
 

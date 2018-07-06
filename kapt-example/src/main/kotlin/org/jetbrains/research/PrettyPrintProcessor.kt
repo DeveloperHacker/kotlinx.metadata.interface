@@ -1,26 +1,24 @@
 package org.jetbrains.research
 
-import com.google.auto.service.AutoService
 import org.jetbrains.research.elements.KtClass
 import org.jetbrains.research.elements.KtEnvironment
 import java.io.File
-import javax.annotation.processing.Processor
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("org.jetbrains.research.PrettyPrintable")
-@AutoService(Processor::class)
+//@AutoService(Processor::class)
 class PrettyPrintProcessor : KtAbstractProcessor<PrettyPrintable>(PrettyPrintable::class.java) {
     override fun process(kaptKotlinGeneratedDir: String, environment: KtEnvironment) {
         val classes = environment
-            .getClassElementsWithAnnotation(PrettyPrintable::class.java)
+            .getKtElements(PrettyPrintable::class.java)
             .filterIsInstance<KtClass>()
         val ktFile = StringBuilder()
         ktFile.append("package compile\n\n\n")
         for (ktClass in classes) {
-            val properties = ktClass.properties.filter { it.flags.visibility?.isPublic == true }
+            val properties = ktClass.properties.filter { it.flags.visibility.isPublic }
             val receiver = ktClass.name.replace('/', '.')
             val typeParameters = ktClass.typeParameters.joinToString(", ") { "*" }.let { if (it.isNotEmpty()) "<$it>" else it }
             val name = ktClass.javaElement.simpleName.toString()

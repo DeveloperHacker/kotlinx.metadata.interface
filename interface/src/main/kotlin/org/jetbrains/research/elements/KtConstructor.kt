@@ -1,8 +1,19 @@
 package org.jetbrains.research.elements
 
 import org.jetbrains.research.flags.KtConstructorsFlags
+import javax.lang.model.element.Element
 
 interface KtConstructor : KtElement, KtWithFlags<KtConstructorsFlags> {
+
+    /**
+     * ToDo kotlin comment
+     **/
+    override val getParent: () -> KtClass
+
+    /**
+     * ToDo kotlin comment
+     **/
+    override val javaElement: Element?
 
     /**
      * ToDo kotlin comment

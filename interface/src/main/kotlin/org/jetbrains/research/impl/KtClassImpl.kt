@@ -7,11 +7,13 @@ import org.jetbrains.research.elements.*
 import org.jetbrains.research.flags.KtClassFlags
 import org.jetbrains.research.utlis.LazyInitializer
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 
 class KtClassImpl(
     environment: KtEnvironment,
     override val javaElement: Element,
-    override val metadata: KotlinClassMetadata.Class
+    override val metadata: KotlinClassMetadata.Class,
+    override val getParent: () -> KtElement?
 ) : KtClass {
 
     private val lazyInitializer = LazyInitializer {
@@ -31,6 +33,17 @@ class KtClassImpl(
             val functions_ = ArrayList<KtFunction>()
             val properties_ = ArrayList<KtProperty>()
             var versionRequirement_: KtVersionRequirement? = null
+            val lazySelf = { this@KtClassImpl }
+
+            val javaFunctions = javaElement.enclosedElements
+                .filter { it.kind == ElementKind.METHOD }
+                .map { IdentityFunction.valueOf(it) to it }
+                .toMap()
+
+            val javaConstructors = javaElement.enclosedElements
+                .filter { it.kind == ElementKind.CONSTRUCTOR }
+                .map { IdentityFunction.valueOf(it) to it }
+                .toMap()
 
             override fun visit(flags: Flags, name: ClassName) {
                 flags_ = KtClassFlags(flags)
@@ -38,11 +51,11 @@ class KtClassImpl(
             }
 
             override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                KtTypeParameterImpl(environment, flags, name, id, variance) {
+                KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
                     typeParameters_.add(it)
                 }
 
-            override fun visitSupertype(flags: Flags) = KtTypeImpl(environment, flags) {
+            override fun visitSupertype(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
                 superTypes_.add(it)
             }
 
@@ -50,9 +63,14 @@ class KtClassImpl(
                 companion_ = it
             }
 
-            override fun visitConstructor(flags: Flags) = KtConstructorImpl(environment, flags) {
+            override fun visitConstructor(flags: Flags) = KtConstructorImpl(environment, lazySelf, flags) {
                 if (it.flags.isPrimary) primaryConstructor_ = it
                 constructors_.add(it)
+                typeParameters = typeParameters_ // It is hack for resolve a recursive problem in the identity function's generation
+                val identityFunction = IdentityFunction.valueOf(it)
+                val element = javaConstructors[identityFunction] ?: return@KtConstructorImpl
+                it.javaElement = element
+                environment.cache(it)
             }
 
             override fun visitEnumEntry(name: String) {
@@ -75,16 +93,33 @@ class KtClassImpl(
                 versionRequirement_ = it
             }
 
-            override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, flags, name) {
+            override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, lazySelf, flags, name) {
                 functions_.add(it)
+                typeParameters = typeParameters_ // It is hack for resolve a recursive problem in the identity function's generation
+                val identityFunction = IdentityFunction.valueOf(it)
+                val key = javaFunctions.entries.first().key
+                System.err.println(identityFunction)
+                System.err.println(IdentityFunction.valueOf(javaFunctions.values.first()))
+                System.err.println(key)
+                System.err.println(key == identityFunction)
+                System.err.println(key!!.name == identityFunction!!.name)
+                System.err.println(key.valueParameters == identityFunction.valueParameters)
+                System.err.println(key.valueParameters::class.java)
+                System.err.println(identityFunction.valueParameters::class.java)
+                System.err.println(key.valueParameters.size)
+                System.err.println(identityFunction.valueParameters.size)
+                System.err.println(javaFunctions[identityFunction])
+                val element = javaFunctions[identityFunction] ?: return@KtFunctionImpl
+                it.javaElement = element
+                environment.cache(it)
             }
 
             override fun visitProperty(flags: Flags, name: String, getterFlags: Flags, setterFlags: Flags) =
-                KtPropertyImpl(environment, flags, name, getterFlags, setterFlags) {
+                KtPropertyImpl(environment, lazySelf, flags, name, getterFlags, setterFlags) {
                     properties_.add(it)
                 }
 
-            override fun visitTypeAlias(flags: Flags, name: String) = KtTypeAliasImpl(environment, flags, name) {
+            override fun visitTypeAlias(flags: Flags, name: String) = KtTypeAliasImpl(environment, lazySelf, flags, name) {
                 typeAliases_.add(it)
             }
 
@@ -157,7 +192,7 @@ class KtClassImpl(
         operator fun invoke(environment: KtEnvironment, javaElement: Element, name: ClassName, resultListener: (KtClass) -> Unit) =
             resultListener(
                 javaElement.enclosedElements.asSequence()
-                    .mapNotNull { environment.getKtClassElement(it) }
+                    .mapNotNull { environment.getKtElement(it) }
                     .filterIsInstance<KtClass>()
                     .first { it.javaElement.simpleName.toString() == name })
     }

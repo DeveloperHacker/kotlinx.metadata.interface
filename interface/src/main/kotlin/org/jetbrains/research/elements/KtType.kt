@@ -9,6 +9,11 @@ interface KtType : KtElement, KtWithFlags<KtDeclarationFlags> {
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
     val extensions: List<KtExtension>
 
     /**

@@ -8,6 +8,11 @@ interface KtTypeAlias : KtElement, KtWithFlags<KtDeclarationFlags> {
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
     val name: String
 
     /**

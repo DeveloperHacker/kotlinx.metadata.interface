@@ -8,6 +8,11 @@ interface KtEffect : KtElement {
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtContract
+
+    /**
+     * ToDo kotlin comment
+     **/
     val type: KmEffectType
 
     /**

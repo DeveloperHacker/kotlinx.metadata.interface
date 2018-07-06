@@ -10,7 +10,8 @@ import javax.lang.model.element.Element
 class KtFileFacadeImpl(
     environment: KtEnvironment,
     override val javaElement: Element,
-    override val metadata: KotlinClassMetadata.FileFacade
+    override val metadata: KotlinClassMetadata.FileFacade,
+    override val getParent: () -> KtElement?
 ) : KtFileFacade {
 
     private val lazyInitializer = LazyInitializer {
@@ -18,17 +19,18 @@ class KtFileFacadeImpl(
             val properties_ = ArrayList<KtProperty>()
             val functions_ = ArrayList<KtFunction>()
             val typeAliases_ = ArrayList<KtTypeAlias>()
+            val lazySelf = { this@KtFileFacadeImpl }
 
-            override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, flags, name) {
+            override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, lazySelf, flags, name) {
                 functions_.add(it)
             }
 
             override fun visitProperty(flags: Flags, name: String, getterFlags: Flags, setterFlags: Flags) =
-                KtPropertyImpl(environment, flags, name, getterFlags, setterFlags) {
+                KtPropertyImpl(environment, lazySelf, flags, name, getterFlags, setterFlags) {
                     properties_.add(it)
                 }
 
-            override fun visitTypeAlias(flags: Flags, name: String) = KtTypeAliasImpl(environment, flags, name) {
+            override fun visitTypeAlias(flags: Flags, name: String) = KtTypeAliasImpl(environment, lazySelf, flags, name) {
                 typeAliases_.add(it)
             }
 

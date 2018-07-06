@@ -4,6 +4,7 @@ import kotlinx.metadata.*
 import kotlinx.metadata.jvm.JvmFunctionExtensionVisitor
 import org.jetbrains.research.elements.*
 import org.jetbrains.research.flags.KtFunctionsFlags
+import javax.lang.model.element.Element
 
 data class KtFunctionImpl(
     override val flags: KtFunctionsFlags,
@@ -14,64 +15,77 @@ data class KtFunctionImpl(
     override val returnType: KtType,
     override val typeParameters: List<KtTypeParameter>,
     override val valueParameters: List<KtValueParameter>,
-    override val versionRequirement: KtVersionRequirement?
+    override val versionRequirement: KtVersionRequirement?,
+    override val getParent: () -> KtElement
 ) : KtFunction {
+
+    override var javaElement: Element? = null
+        internal set
+
     companion object {
-        operator fun invoke(environment: KtEnvironment, flags: Flags, name: String, resultListener: (KtFunction) -> Unit) =
-            object : KmFunctionVisitor() {
-                var contract: KtContract? = null
-                val extensions = ArrayList<KtFunction.KtExtension>()
-                var receiverParameterType: KtType? = null
-                lateinit var returnType: KtType
-                val typeParameters = ArrayList<KtTypeParameter>()
-                val valueParameters = ArrayList<KtValueParameter>()
-                var versionRequirement: KtVersionRequirement? = null
+        operator fun invoke(
+            environment: KtEnvironment,
+            parent: () -> KtElement,
+            flags: Flags,
+            name: String,
+            resultListener: (KtFunctionImpl) -> Unit
+        ) = object : KmFunctionVisitor() {
+            var contract: KtContract? = null
+            val extensions = ArrayList<KtFunction.KtExtension>()
+            var receiverParameterType: KtType? = null
+            lateinit var returnType: KtType
+            val typeParameters = ArrayList<KtTypeParameter>()
+            val valueParameters = ArrayList<KtValueParameter>()
+            var versionRequirement: KtVersionRequirement? = null
+            lateinit var self: KtFunctionImpl
+            val lazySelf = { self }
 
-                override fun visitContract() = KtContractImpl(environment) {
-                    contract = it
-                }
-
-                override fun visitEnd() {
-                    val functionFlags = KtFunctionsFlags(flags)
-                    val function = KtFunctionImpl(
-                        functionFlags,
-                        name,
-                        contract,
-                        extensions,
-                        receiverParameterType,
-                        returnType,
-                        typeParameters,
-                        valueParameters,
-                        versionRequirement
-                    )
-                    resultListener(function)
-                }
-
-                override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
-                    extensions.add(it)
-                }
-
-                override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, flags) {
-                    receiverParameterType = it
-                }
-
-                override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, flags) {
-                    returnType = it
-                }
-
-                override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                    KtTypeParameterImpl(environment, flags, name, id, variance) {
-                        typeParameters.add(it)
-                    }
-
-                override fun visitValueParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, flags, name) {
-                    valueParameters.add(it)
-                }
-
-                override fun visitVersionRequirement() = KtVersionRequirementImpl {
-                    versionRequirement = it
-                }
+            override fun visitContract() = KtContractImpl(environment, lazySelf) {
+                contract = it
             }
+
+            override fun visitEnd() {
+                val functionFlags = KtFunctionsFlags(flags)
+                self = KtFunctionImpl(
+                    functionFlags,
+                    name,
+                    contract,
+                    extensions,
+                    receiverParameterType,
+                    returnType,
+                    typeParameters,
+                    valueParameters,
+                    versionRequirement,
+                    parent
+                )
+                resultListener(self)
+            }
+
+            override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
+                extensions.add(it)
+            }
+
+            override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
+                receiverParameterType = it
+            }
+
+            override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
+                returnType = it
+            }
+
+            override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
+                KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
+                    typeParameters.add(it)
+                }
+
+            override fun visitValueParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, lazySelf, flags, name) {
+                valueParameters.add(it)
+            }
+
+            override fun visitVersionRequirement() = KtVersionRequirementImpl {
+                versionRequirement = it
+            }
+        }
     }
 
     class KtExtensionImpl : KtFunction.KtExtension {

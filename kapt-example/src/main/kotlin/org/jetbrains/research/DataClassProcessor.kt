@@ -1,21 +1,20 @@
 package org.jetbrains.research
 
-import com.google.auto.service.AutoService
 import org.jetbrains.research.elements.KtClass
 import org.jetbrains.research.elements.KtEnvironment
+import org.jetbrains.research.elements.publicProperties
 import java.io.File
-import javax.annotation.processing.Processor
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("org.jetbrains.research.DataClass")
-@AutoService(Processor::class)
+//@AutoService(Processor::class)
 class DataClassProcessor : KtAbstractProcessor<DataClass>(DataClass::class.java) {
     override fun process(kaptKotlinGeneratedDir: String, environment: KtEnvironment) {
         val classes = environment
-            .getClassElementsWithAnnotation(DataClass::class.java)
+            .getKtElements(DataClass::class.java)
             .filterIsInstance<KtClass>()
         val ktFile = StringBuilder()
         ktFile.append("package compile\n\n\n")
@@ -40,9 +39,6 @@ class DataClassProcessor : KtAbstractProcessor<DataClass>(DataClass::class.java)
             val typeParametersStr = if (typeParameters.isNotEmpty()) "<$typeParameters>" else typeParameters
             return receiver + typeParametersStr
         }
-
-    private val KtClass.publicProperties
-        get() = properties.filter { it.flags.visibility?.isPublic == true }
 
 
     private fun StringBuilder.appendGeneratedEquals(ktClass: KtClass) {
@@ -81,16 +77,4 @@ class DataClassProcessor : KtAbstractProcessor<DataClass>(DataClass::class.java)
         val parameterStr = ktClass.publicProperties.joinToString(",") { "${it.name}=$${it.name}" }
         append("fun ${ktClass.type}.generatedToString() = \"$name($parameterStr)\"\n")
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is DataClassProcessor) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return javaClass.hashCode()
-    }
-
-
 }

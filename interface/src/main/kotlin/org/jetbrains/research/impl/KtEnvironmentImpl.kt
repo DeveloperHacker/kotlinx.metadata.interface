@@ -2,20 +2,20 @@ package org.jetbrains.research.impl
 
 import kotlinx.metadata.jvm.KotlinClassHeader
 import kotlinx.metadata.jvm.KotlinClassMetadata
+import org.jetbrains.research.elements.KtClass
 import org.jetbrains.research.elements.KtClassElement
+import org.jetbrains.research.elements.KtElement
 import org.jetbrains.research.elements.KtEnvironment
 import java.util.*
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.element.*
+import javax.lang.model.element.AnnotationMirror
+import javax.lang.model.element.AnnotationValue
+import javax.lang.model.element.Element
+import javax.lang.model.element.TypeElement
 
-class KtEnvironmentImpl(private val roundEnvironment: RoundEnvironment) : KtEnvironment {
-    private val classElements = HashMap<String, KtClassElement<*>>()
+class KtEnvironmentImpl(val roundEnvironment: RoundEnvironment) : KtEnvironment {
 
-    private val Element.qualifiedIdentificator: String
-        get() = when (kind) {
-            ElementKind.PACKAGE, ElementKind.CLASS, ElementKind.ANNOTATION_TYPE -> "[$kind][$this]"
-            else -> "[$kind][${enclosingElement?.qualifiedIdentificator}][$this]"
-        }
+    private val elements = IdentityHashMap<Element, KtElement>()
 
     private inline fun <reified T> List<*>.allIsInstance() = filterIsInstance<T>().let {
         if (it.size == size) it else null
@@ -47,22 +47,44 @@ class KtEnvironmentImpl(private val roundEnvironment: RoundEnvironment) : KtEnvi
         KotlinClassHeader(kind, metadataVersion, bytecodeVersion, data1, data2, extraString, packageName, extraInt)
     }
 
-    override fun getKtClassElement(javaElement: Element): KtClassElement<*>? {
-        val identificator = javaElement.qualifiedIdentificator
-        val storedElement = classElements[identificator]
-        if (storedElement != null) return storedElement
-        val classHeader = javaElement.kotlinClass()
-        val metadata = classHeader?.let { KotlinClassMetadata.read(it) } ?: return null
-        val classElement = when (metadata) {
-            is KotlinClassMetadata.Class -> KtClassImpl(this, javaElement, metadata)
-            is KotlinClassMetadata.FileFacade -> KtFileFacadeImpl(this, javaElement, metadata)
-            is KotlinClassMetadata.SyntheticClass -> KtSyntheticClassImpl(this, javaElement, metadata)
-            is KotlinClassMetadata.MultiFileClassFacade -> KtMultiFileClassFacadeImpl(javaElement, metadata)
-            is KotlinClassMetadata.MultiFileClassPart -> KtMultiFileClassPartImpl(this, javaElement, metadata)
-            is KotlinClassMetadata.Unknown -> KtUnknownImpl(javaElement, metadata)
+    private fun Element.ktClassElement(): KtClassElement<*>? {
+        val classHeader = kotlinClass() ?: return null
+        val metadata = KotlinClassMetadata.read(classHeader) ?: return null
+        val parent = { getKtElement(enclosingElement) }
+        return when (metadata) {
+            is KotlinClassMetadata.Class -> KtClassImpl(this@KtEnvironmentImpl, this, metadata, parent)
+            is KotlinClassMetadata.FileFacade -> KtFileFacadeImpl(this@KtEnvironmentImpl, this, metadata, parent)
+            is KotlinClassMetadata.SyntheticClass -> KtSyntheticClassImpl(this@KtEnvironmentImpl, this, metadata, parent)
+            is KotlinClassMetadata.MultiFileClassFacade -> KtMultiFileClassFacadeImpl(this, metadata, parent)
+            is KotlinClassMetadata.MultiFileClassPart -> KtMultiFileClassPartImpl(this@KtEnvironmentImpl, this, metadata, parent)
+            is KotlinClassMetadata.Unknown -> KtUnknownImpl(this, metadata, parent)
         }
-        classElements[identificator] = classElement
-        return classElement
+    }
+
+    fun Element.getNearestClassElement(): KtClassElement<*>? {
+        var current: Element? = this
+        while (current != null) {
+            val classElement = current.ktClassElement()
+            if (classElement != null) return classElement
+            current = current.enclosingElement
+        }
+        return null
+    }
+
+    override fun getKtElement(javaElement: Element): KtElement? {
+        val storedElement = elements[javaElement]
+        if (storedElement != null) return storedElement
+        val classElement = javaElement.getNearestClassElement() ?: return null
+        System.err.println((classElement as KtClass).functions.first().javaElement)
+        cache(classElement)
+        return elements[javaElement]
+    }
+
+    override fun cache(ktElement: KtElement): Boolean {
+        val element = ktElement.javaElement
+        if (elements.containsKey(element)) return false
+        elements[element] = ktElement
+        return true
     }
 
     private fun findAllElements() = Sequence {
@@ -79,11 +101,11 @@ class KtEnvironmentImpl(private val roundEnvironment: RoundEnvironment) : KtEnvi
         }
     }
 
-    override fun findAllKtClassElements() = findAllElements().mapNotNull { getKtClassElement(it) }
+    override fun getAllKtElements() = findAllElements().mapNotNull { getKtElement(it) }
 
-    override fun getRootClassElements() =
-        roundEnvironment.rootElements.asSequence().mapNotNull { getKtClassElement(it) }
+    override fun getRootKtElements() =
+        roundEnvironment.rootElements.asSequence().mapNotNull { getKtElement(it) }
 
-    override fun <T : Annotation> getClassElementsWithAnnotation(annotationType: Class<T>) =
-        roundEnvironment.getElementsAnnotatedWith(annotationType).asSequence().mapNotNull { getKtClassElement(it) }
+    override fun <T : Annotation> getKtElements(annotationType: Class<T>) =
+        roundEnvironment.getElementsAnnotatedWith(annotationType).asSequence().mapNotNull { getKtElement(it) }
 }

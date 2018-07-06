@@ -7,6 +7,11 @@ interface KtProperty : KtElement, KtWithFlags<org.jetbrains.research.flags.KtPro
     /**
      * ToDo kotlin comment
      **/
+    override val getParent: () -> KtElement
+
+    /**
+     * ToDo kotlin comment
+     **/
     val name: String
 
     /**
@@ -22,7 +27,7 @@ interface KtProperty : KtElement, KtWithFlags<org.jetbrains.research.flags.KtPro
     /**
      * ToDo kotlin comment
      **/
-    val extensions: List<KtExtensions>
+    val extensions: List<KtExtension>
 
     /**
      * ToDo kotlin comment
@@ -49,7 +54,7 @@ interface KtProperty : KtElement, KtWithFlags<org.jetbrains.research.flags.KtPro
      **/
     val versionRequirement: KtVersionRequirement?
 
-    interface KtExtensions {
+    interface KtExtension {
 
         /**
          * ToDo kotlin comment
