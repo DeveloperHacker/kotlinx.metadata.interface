@@ -26,6 +26,6 @@ class A<T>(private val a: T) {
 }
 
 fun main(args: Array<String>) {
-    A(10).value
+    println(A(10).value)
     println(Tuple4(1, 2, 3, 4).toPrettyString())
 }

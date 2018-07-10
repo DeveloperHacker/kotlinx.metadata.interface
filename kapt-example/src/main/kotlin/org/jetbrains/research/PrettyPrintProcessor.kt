@@ -1,15 +1,17 @@
 package org.jetbrains.research
 
+import com.google.auto.service.AutoService
 import org.jetbrains.research.elements.KtClass
 import org.jetbrains.research.elements.KtEnvironment
 import java.io.File
+import javax.annotation.processing.Processor
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("org.jetbrains.research.PrettyPrintable")
-//@AutoService(Processor::class)
+@AutoService(Processor::class)
 class PrettyPrintProcessor : KtAbstractProcessor<PrettyPrintable>(PrettyPrintable::class.java) {
     override fun process(kaptKotlinGeneratedDir: String, environment: KtEnvironment) {
         val classes = environment

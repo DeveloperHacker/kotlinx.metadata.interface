@@ -10,6 +10,14 @@ class LazyInitializer(private val init: () -> Unit) {
     var hasInitialization = false
         private set
 
+    fun forceInit() {
+        if (this@LazyInitializer.hasInitialization)
+            error("Initialization recursive problem")
+        this@LazyInitializer.hasInitialization = true
+        this@LazyInitializer.init()
+        this@LazyInitializer.hasInitialization = false
+    }
+
     inner class Property<C, T> {
         var hasInitialized = false
             private set
@@ -18,13 +26,7 @@ class LazyInitializer(private val init: () -> Unit) {
 
         operator fun getValue(instance: C, property: KProperty<*>): T {
             if (this@Property.hasInitialized) return this@Property.value.value
-            if (!this@LazyInitializer.hasInitialized) {
-                if (this@LazyInitializer.hasInitialization)
-                    error("Initialization recursive problem for $instance")
-                this@LazyInitializer.hasInitialization = true
-                this@LazyInitializer.init()
-                this@LazyInitializer.hasInitialization = false
-            }
+            if (!this@LazyInitializer.hasInitialized) forceInit()
             if (!this@Property.hasInitialized)
                 error("Property ${property.name} hasn't initialized during $instance initialization")
             this@LazyInitializer.hasInitialized = true

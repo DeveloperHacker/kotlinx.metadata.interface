@@ -4,7 +4,7 @@ import kotlinx.metadata.ClassName
 import kotlinx.metadata.jvm.KotlinClassMetadata
 import org.jetbrains.research.flags.KtClassFlags
 
-interface KtClass : KtClassElement<KotlinClassMetadata.Class>, KtDeclarationContainer, KtWithFlags<KtClassFlags> {
+interface KtClass : KtClassElement<KotlinClassMetadata.Class>, KtDeclarationContainer, KtWithFlags<KtClassFlags>, KtLazyElement {
 
     /**
      * ToDo kotlin comment

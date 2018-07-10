@@ -22,7 +22,7 @@ class KtClassImpl(
             lateinit var name_: ClassName
             var companion_: KtClass? = null
             var primaryConstructor_: KtConstructor? = null
-            val constructors_ = ArrayList<KtConstructor>()
+            val constructors_ = ArrayList<KtConstructorImpl>()
             val extensions_ = ArrayList<KtClass.KtExtension>()
             val enumEntries_ = ArrayList<String>()
             val typeParameters_ = ArrayList<KtTypeParameter>()
@@ -30,20 +30,11 @@ class KtClassImpl(
             val superTypes_ = ArrayList<KtType>()
             val sealedSubclasses_ = ArrayList<KtClass>()
             val typeAliases_ = ArrayList<KtTypeAlias>()
-            val functions_ = ArrayList<KtFunction>()
+            val functions_ = ArrayList<KtFunctionImpl>()
             val properties_ = ArrayList<KtProperty>()
             var versionRequirement_: KtVersionRequirement? = null
             val lazySelf = { this@KtClassImpl }
 
-            val javaFunctions = javaElement.enclosedElements
-                .filter { it.kind == ElementKind.METHOD }
-                .map { IdentityFunction.valueOf(it) to it }
-                .toMap()
-
-            val javaConstructors = javaElement.enclosedElements
-                .filter { it.kind == ElementKind.CONSTRUCTOR }
-                .map { IdentityFunction.valueOf(it) to it }
-                .toMap()
 
             override fun visit(flags: Flags, name: ClassName) {
                 flags_ = KtClassFlags(flags)
@@ -66,11 +57,6 @@ class KtClassImpl(
             override fun visitConstructor(flags: Flags) = KtConstructorImpl(environment, lazySelf, flags) {
                 if (it.flags.isPrimary) primaryConstructor_ = it
                 constructors_.add(it)
-                typeParameters = typeParameters_ // It is hack for resolve a recursive problem in the identity function's generation
-                val identityFunction = IdentityFunction.valueOf(it)
-                val element = javaConstructors[identityFunction] ?: return@KtConstructorImpl
-                it.javaElement = element
-                environment.cache(it)
             }
 
             override fun visitEnumEntry(name: String) {
@@ -95,23 +81,6 @@ class KtClassImpl(
 
             override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, lazySelf, flags, name) {
                 functions_.add(it)
-                typeParameters = typeParameters_ // It is hack for resolve a recursive problem in the identity function's generation
-                val identityFunction = IdentityFunction.valueOf(it)
-                val key = javaFunctions.entries.first().key
-                System.err.println(identityFunction)
-                System.err.println(IdentityFunction.valueOf(javaFunctions.values.first()))
-                System.err.println(key)
-                System.err.println(key == identityFunction)
-                System.err.println(key!!.name == identityFunction!!.name)
-                System.err.println(key.valueParameters == identityFunction.valueParameters)
-                System.err.println(key.valueParameters::class.java)
-                System.err.println(identityFunction.valueParameters::class.java)
-                System.err.println(key.valueParameters.size)
-                System.err.println(identityFunction.valueParameters.size)
-                System.err.println(javaFunctions[identityFunction])
-                val element = javaFunctions[identityFunction] ?: return@KtFunctionImpl
-                it.javaElement = element
-                environment.cache(it)
             }
 
             override fun visitProperty(flags: Flags, name: String, getterFlags: Flags, setterFlags: Flags) =
@@ -139,9 +108,32 @@ class KtClassImpl(
                 functions = functions_
                 properties = properties_
                 typeAliases = typeAliases_
+
+                val javaConstructors = javaElement.enclosedElements
+                    .filter { it.kind == ElementKind.CONSTRUCTOR }
+                    .map { IdentityFunction.valueOf(it) to it }
+                    .toMap()
+                for (constructor in constructors_) {
+                    val identityFunction = IdentityFunction.valueOf(constructor)
+                    val element = javaConstructors[identityFunction] ?: continue
+                    constructor.javaElement = element
+                    environment.cache(constructor)
+                }
+                val javaFunctions = javaElement.enclosedElements
+                    .filter { it.kind == ElementKind.METHOD }
+                    .map { IdentityFunction.valueOf(it) to it }
+                    .toMap()
+                for (function in functions_) {
+                    val identityFunction = IdentityFunction.valueOf(function)
+                    val element = javaFunctions[identityFunction] ?: continue
+                    function.javaElement = element
+                    environment.cache(function)
+                }
             }
         })
     }
+
+    override fun toString() = javaElement.toString()
 
     override var flags: KtClassFlags by lazyInitializer.Property()
         private set
@@ -187,6 +179,8 @@ class KtClassImpl(
 
     override var properties: List<KtProperty> by lazyInitializer.Property()
         private set
+
+    override fun forceInit() = lazyInitializer.forceInit()
 
     companion object {
         operator fun invoke(environment: KtEnvironment, javaElement: Element, name: ClassName, resultListener: (KtClass) -> Unit) =

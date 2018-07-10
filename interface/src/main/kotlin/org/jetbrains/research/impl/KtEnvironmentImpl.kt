@@ -2,10 +2,10 @@ package org.jetbrains.research.impl
 
 import kotlinx.metadata.jvm.KotlinClassHeader
 import kotlinx.metadata.jvm.KotlinClassMetadata
-import org.jetbrains.research.elements.KtClass
 import org.jetbrains.research.elements.KtClassElement
 import org.jetbrains.research.elements.KtElement
 import org.jetbrains.research.elements.KtEnvironment
+import org.jetbrains.research.elements.KtLazyElement
 import java.util.*
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.AnnotationMirror
@@ -50,7 +50,7 @@ class KtEnvironmentImpl(val roundEnvironment: RoundEnvironment) : KtEnvironment 
     private fun Element.ktClassElement(): KtClassElement<*>? {
         val classHeader = kotlinClass() ?: return null
         val metadata = KotlinClassMetadata.read(classHeader) ?: return null
-        val parent = { getKtElement(enclosingElement) }
+        val parent = { enclosingElement.ktElement() }
         return when (metadata) {
             is KotlinClassMetadata.Class -> KtClassImpl(this@KtEnvironmentImpl, this, metadata, parent)
             is KotlinClassMetadata.FileFacade -> KtFileFacadeImpl(this@KtEnvironmentImpl, this, metadata, parent)
@@ -61,7 +61,7 @@ class KtEnvironmentImpl(val roundEnvironment: RoundEnvironment) : KtEnvironment 
         }
     }
 
-    fun Element.getNearestClassElement(): KtClassElement<*>? {
+    fun Element.getNearestLazyElement(): KtClassElement<*>? {
         var current: Element? = this
         while (current != null) {
             val classElement = current.ktClassElement()
@@ -71,12 +71,18 @@ class KtEnvironmentImpl(val roundEnvironment: RoundEnvironment) : KtEnvironment 
         return null
     }
 
+    private fun Element.ktElement() = getKtElement(this)
+
     override fun getKtElement(javaElement: Element): KtElement? {
         val storedElement = elements[javaElement]
         if (storedElement != null) return storedElement
-        val classElement = javaElement.getNearestClassElement() ?: return null
-        System.err.println((classElement as KtClass).functions.first().javaElement)
-        cache(classElement)
+        javaElement.ktClassElement()?.let {
+            cache(it)
+            return elements[javaElement]
+        }
+        val element = javaElement.enclosingElement?.ktElement() ?: return null
+        cache(element)
+        (element as? KtLazyElement)?.forceInit()
         return elements[javaElement]
     }
 
@@ -101,11 +107,11 @@ class KtEnvironmentImpl(val roundEnvironment: RoundEnvironment) : KtEnvironment 
         }
     }
 
-    override fun getAllKtElements() = findAllElements().mapNotNull { getKtElement(it) }
+    override fun getAllKtElements() = findAllElements().mapNotNull { it.ktElement() }
 
     override fun getRootKtElements() =
-        roundEnvironment.rootElements.asSequence().mapNotNull { getKtElement(it) }
+        roundEnvironment.rootElements.asSequence().mapNotNull { it.ktElement() }
 
     override fun <T : Annotation> getKtElements(annotationType: Class<T>) =
-        roundEnvironment.getElementsAnnotatedWith(annotationType).asSequence().mapNotNull { getKtElement(it) }
+        roundEnvironment.getElementsAnnotatedWith(annotationType).asSequence().mapNotNull { it.ktElement() }
 }

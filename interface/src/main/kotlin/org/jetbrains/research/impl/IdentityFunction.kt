@@ -1,5 +1,6 @@
 package org.jetbrains.research.impl
 
+import com.sun.management.VMOption
 import org.jetbrains.research.elements.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -23,7 +24,10 @@ data class IdentityFunction(val name: String, val valueParameters: List<String>)
         )
 
         fun valueOf(constructor: KtConstructor): IdentityFunction? {
-            val valueParameters = constructor.valueParameters.map { it.type.origin }
+            val parent = constructor.getParent()
+            val parentOfParent = parent.getParent()?.toString()?.let { KtType.Origin.Class(it) }
+            val constructorParameters = if (parent.flags.isInner) listOf(parentOfParent!!) else emptyList()
+            val valueParameters = constructorParameters + constructor.valueParameters.map { it.type.origin }
             val typeParameters = constructor.allTypeParameters.map { it.id to it.name }.toMap()
             val descriptor = constructor.descriptor ?: return null
             val jvmMethod = parseJvmFunction(descriptor)
@@ -56,7 +60,7 @@ data class IdentityFunction(val name: String, val valueParameters: List<String>)
             val jvmValueParameters = jvmFunction.valueParameters
             val valueParameters = ArrayList<String>()
             if (jvmValueParameters.size != kotlinValueParameters.size)
-                error("IdentityFunction.valueOf #1 $jvmValueParameters $kotlinValueParameters")
+                error("IdentityFunction.valueOf #1 $jvmFunction $kotlinValueParameters")
             for ((jvm, kotlin) in jvmValueParameters.zip(kotlinValueParameters)) {
                 if (kotlin is KtType.Origin.TypeParameter) {
                     val name = typeParameters[kotlin.id] ?: error("IdentityFunction.valueOf #2 ${kotlin.id}")
@@ -133,7 +137,9 @@ data class IdentityFunction(val name: String, val valueParameters: List<String>)
                 }
             }
             if (genericDepth != 0) error("JavaFunction.parseJvmFunction #4")
-            val valueParameters = valueParametersStr.toString().split(',')
+            val valueParameters = valueParametersStr.toString().let {
+                if (it.isNotEmpty()) it.split(',') else emptyList()
+            }
             return JavaFunction(typeParameters, name, valueParameters)
         }
     }

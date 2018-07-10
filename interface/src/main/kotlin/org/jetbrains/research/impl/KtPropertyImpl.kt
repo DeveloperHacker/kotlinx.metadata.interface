@@ -29,62 +29,61 @@ data class KtPropertyImpl(
             getterFlags: Flags,
             setterFlags: Flags,
             resultListener: (KtProperty) -> Unit
-        ) =
-            object : KmPropertyVisitor() {
-                val extensions = ArrayList<KtProperty.KtExtension>()
-                var receiverParameterType: KtType? = null
-                lateinit var returnType: KtType
-                var setterValueParameter: KtValueParameter? = null
-                val typeParameters = ArrayList<KtTypeParameter>()
-                var versionRequirement: KtVersionRequirement? = null
-                lateinit var self: KtProperty
-                val lazySelf = { self }
+        ) = object : KmPropertyVisitor() {
+            val extensions = ArrayList<KtProperty.KtExtension>()
+            var receiverParameterType: KtType? = null
+            lateinit var returnType: KtType
+            var setterValueParameter: KtValueParameter? = null
+            val typeParameters = ArrayList<KtTypeParameter>()
+            var versionRequirement: KtVersionRequirement? = null
+            lateinit var self: KtProperty
+            val lazySelf = { self }
 
-                override fun visitEnd() {
-                    val propertyFlags = KtPropertiesFlags(flags)
-                    val setterFunctionFlags = KtFunctionsFlags(setterFlags)
-                    val getterFunctionFlags = KtFunctionsFlags(getterFlags)
-                    self = KtPropertyImpl(
-                        propertyFlags,
-                        name,
-                        setterFunctionFlags,
-                        getterFunctionFlags,
-                        extensions,
-                        receiverParameterType,
-                        returnType,
-                        setterValueParameter,
-                        typeParameters,
-                        versionRequirement,
-                        parent
-                    )
-                    resultListener(self)
-                }
-
-                override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
-                    extensions.add(it)
-                }
-
-                override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
-                    receiverParameterType = it
-                }
-
-                override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
-                    returnType = it
-                }
-
-                override fun visitSetterParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, lazySelf, flags, name) {
-                    setterValueParameter = it
-                }
-
-                override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
-                    KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
-                        typeParameters
-                    }
-
-                override fun visitVersionRequirement() = KtVersionRequirementImpl {
-                    versionRequirement = it
-                }
+            override fun visitEnd() {
+                val propertyFlags = KtPropertiesFlags(flags)
+                val setterFunctionFlags = KtFunctionsFlags(setterFlags)
+                val getterFunctionFlags = KtFunctionsFlags(getterFlags)
+                self = KtPropertyImpl(
+                    propertyFlags,
+                    name,
+                    setterFunctionFlags,
+                    getterFunctionFlags,
+                    extensions,
+                    receiverParameterType,
+                    returnType,
+                    setterValueParameter,
+                    typeParameters,
+                    versionRequirement,
+                    parent
+                )
+                resultListener(self)
             }
+
+            override fun visitExtensions(type: KmExtensionType) = KtExtensionImpl(type) {
+                extensions.add(it)
+            }
+
+            override fun visitReceiverParameterType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
+                receiverParameterType = it
+            }
+
+            override fun visitReturnType(flags: Flags) = KtTypeImpl(environment, lazySelf, flags) {
+                returnType = it
+            }
+
+            override fun visitSetterParameter(flags: Flags, name: String) = KtValueParameterImpl(environment, lazySelf, flags, name) {
+                setterValueParameter = it
+            }
+
+            override fun visitTypeParameter(flags: Flags, name: String, id: Int, variance: KmVariance) =
+                KtTypeParameterImpl(environment, lazySelf, flags, name, id, variance) {
+                    typeParameters
+                }
+
+            override fun visitVersionRequirement() = KtVersionRequirementImpl {
+                versionRequirement = it
+            }
+        }
     }
 
     data class KtExtensionImpl(

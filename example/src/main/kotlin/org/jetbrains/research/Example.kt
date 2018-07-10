@@ -122,7 +122,7 @@ class BBB(val a: Int) {
 
 @DataClass
 class FullBlown {
-    inner class Inner
+    inner class Inner(val int: Int)
 
     class NotInner
 

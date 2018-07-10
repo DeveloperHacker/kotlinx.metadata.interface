@@ -9,6 +9,7 @@ import org.jetbrains.research.elements.KtFunction
 import org.jetbrains.research.elements.KtSyntheticClass
 import org.jetbrains.research.utlis.LazyInitializer
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 
 class KtSyntheticClassImpl(
     environment: KtEnvironment,
@@ -19,7 +20,7 @@ class KtSyntheticClassImpl(
 
     private val lazyInitializer = LazyInitializer {
         metadata.accept(object : KmLambdaVisitor() {
-            lateinit var function_: KtFunction
+            lateinit var function_: KtFunctionImpl
             val lazySelf = { this@KtSyntheticClassImpl }
 
             override fun visitFunction(flags: Flags, name: String) = KtFunctionImpl(environment, lazySelf, flags, name) {
@@ -28,10 +29,23 @@ class KtSyntheticClassImpl(
 
             override fun visitEnd() {
                 function = function_
+
+                val javaFunctions = javaElement.enclosedElements
+                    .filter { it.kind == ElementKind.METHOD }
+                    .map { IdentityFunction.valueOf(it) to it }
+                    .toMap()
+                val identityFunction = IdentityFunction.valueOf(function_)
+                val element = javaFunctions[identityFunction]
+                if (element != null) {
+                    function_.javaElement = element
+                    environment.cache(function_)
+                }
             }
         })
     }
 
     override var function: KtFunction by lazyInitializer.Property()
         private set
+
+    override fun forceInit() = lazyInitializer.forceInit()
 }

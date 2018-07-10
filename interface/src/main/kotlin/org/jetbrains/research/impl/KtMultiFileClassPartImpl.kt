@@ -6,6 +6,7 @@ import kotlinx.metadata.jvm.KotlinClassMetadata
 import org.jetbrains.research.elements.*
 import org.jetbrains.research.utlis.LazyInitializer
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 
 class KtMultiFileClassPartImpl(
     environment: KtEnvironment,
@@ -17,7 +18,7 @@ class KtMultiFileClassPartImpl(
     private val lazyInitializer = LazyInitializer {
         metadata.accept(object : KmPackageVisitor() {
             val properties_ = ArrayList<KtProperty>()
-            val functions_ = ArrayList<KtFunction>()
+            val functions_ = ArrayList<KtFunctionImpl>()
             val typeAliases_ = ArrayList<KtTypeAlias>()
             val lazySelf = { this@KtMultiFileClassPartImpl }
 
@@ -38,6 +39,17 @@ class KtMultiFileClassPartImpl(
                 functions = functions_
                 properties = properties_
                 typeAliases = typeAliases_
+
+                val javaFunctions = javaElement.enclosedElements
+                    .filter { it.kind == ElementKind.METHOD }
+                    .map { IdentityFunction.valueOf(it) to it }
+                    .toMap()
+                for (function in functions_) {
+                    val identityFunction = IdentityFunction.valueOf(function)
+                    val element = javaFunctions[identityFunction] ?: continue
+                    function.javaElement = element
+                    environment.cache(function)
+                }
             }
         })
     }
@@ -50,4 +62,6 @@ class KtMultiFileClassPartImpl(
 
     override var typeAliases: List<KtTypeAlias> by lazyInitializer.Property()
         private set
+
+    override fun forceInit() = lazyInitializer.forceInit()
 }
