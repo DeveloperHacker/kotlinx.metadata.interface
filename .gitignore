@@ -1,4 +1,8 @@
-*.iml
-.idea/*
-*/target/*
-lib/*
+**.iml
+/**/target/**
+/lib/**
+
+/.idea/*
+!/.idea/codeStyles
+!/.idea/codeStyleSettings.xml
+!/.idea/projectCodeStyle.xml
