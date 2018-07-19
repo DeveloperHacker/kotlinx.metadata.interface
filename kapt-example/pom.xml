@@ -3,9 +3,9 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>kotlinx.metadata.interface</artifactId>
+        <artifactId>kotlinx-metadata-interface</artifactId>
         <groupId>org.jetbrains.research</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,8 +34,8 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.research</groupId>
-            <artifactId>interface</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>kotlinx.metadata.interface</artifactId>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
